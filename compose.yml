@@ -1,28 +1,40 @@
+# ============================================
+# Code Academy - Docker Compose
+# ============================================
+# Levanta todos los servicios con: docker compose up -d
+# Ver logs: docker compose logs -f web
+
 services:
+  # --- Base de Datos PostgreSQL ---
   db:
     image: postgres:16
+    env_file: .env                      # Lee variables del .env
     environment:
-      POSTGRES_DB: digital_store
-      POSTGRES_USER: digital_user
-      POSTGRES_PASSWORD: digital_pass
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:
       - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:                        # Verifica que PostgreSQL está listo
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-digital_user} -d ${DB_NAME:-digital_store}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
+  # --- Backend Django ---
   web:
     build: .
     ports:
       - "8000:8000"
+    env_file: .env                      # Lee variables del .env
     environment:
-      DJANGO_SECRET_KEY: "dev-secret-key"
-      DB_NAME: digital_store
-      DB_USER: digital_user
-      DB_PASSWORD: digital_pass
       DB_HOST: db
-      DB_PORT: "5433"
+      DB_PORT: "5432"                   # Puerto INTERNO del contenedor (no el mapeado)
     depends_on:
-      - db
+      db:
+        condition: service_healthy      # Espera a que DB esté lista
     volumes:
       - .:/code
 

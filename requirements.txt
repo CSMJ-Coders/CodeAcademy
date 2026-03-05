@@ -1,4 +1,21 @@
-Django==4.2.*
-psycopg2-binary==2.9.*
-python-dotenv==1.0.*
-djangorestframework
+# ============================================
+# Code Academy - Dependencias Python
+# ============================================
+
+# --- Framework Principal ---
+Django==4.2.*                        # El framework web (como el motor del carro)
+
+# --- Base de Datos ---
+psycopg2-binary==2.9.*               # Driver para conectar Django con PostgreSQL
+
+# --- API REST ---
+djangorestframework                  # DRF: convierte Django en una API REST
+djangorestframework-simplejwt        # JWT: autenticación con tokens (como una credencial digital)
+django-filter                        # Filtros avanzados para la API (filtrar por tipo, nivel, etc.)
+
+# --- Seguridad / CORS ---
+django-cors-headers                  # Permite que React (otro dominio) hable con Django
+
+# --- Utilidades ---
+python-dotenv==1.0.*                 # Lee variables del archivo .env
+Pillow                               # Procesamiento de imágenes (para las portadas de productos)
