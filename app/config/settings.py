@@ -38,6 +38,10 @@ DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() in ('true', '1', 'yes')
 # En desarrollo: localhost. En producción: tu-dominio.com
 ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
+# USE_SQLITE_FOR_LOCAL: fallback opcional para correr tests o validar localmente
+# cuando Docker/PostgreSQL no está disponible.
+USE_SQLITE_FOR_LOCAL = os.environ.get('USE_SQLITE_FOR_LOCAL', 'False').lower() in ('true', '1', 'yes')
+
 
 # ============================================
 # Aplicaciones Instaladas
@@ -57,6 +61,7 @@ INSTALLED_APPS = [
     'rest_framework',                # Django REST Framework: para crear APIs
     'corsheaders',                   # CORS: permite que React hable con Django
     'rest_framework_simplejwt',      # JWT: autenticación con tokens
+    'rest_framework_simplejwt.token_blacklist',
 
     # --- Nuestras Apps ---
     'core',                          # Utilidades compartidas (base models, permisos)
@@ -108,18 +113,26 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # ============================================
 # Base de Datos
 # ============================================
-# Usamos PostgreSQL (base de datos profesional).
-# Todas las credenciales vienen del .env
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME', 'digital_store'),
-        'USER': os.environ.get('DB_USER', 'digital_user'),
-        'PASSWORD': os.environ.get('DB_PASSWORD', 'digital_pass'),
-        'HOST': os.environ.get('DB_HOST', 'db'),
-        'PORT': os.environ.get('DB_PORT', '5432'),
+# Usamos PostgreSQL como base principal del proyecto.
+# Pero dejamos un fallback opcional a SQLite para validación rápida local/tests.
+if USE_SQLITE_FOR_LOCAL:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.environ.get('DB_NAME', 'digital_store'),
+            'USER': os.environ.get('DB_USER', 'digital_user'),
+            'PASSWORD': os.environ.get('DB_PASSWORD', 'digital_pass'),
+            'HOST': os.environ.get('DB_HOST', 'db'),
+            'PORT': os.environ.get('DB_PORT', '5432'),
+        }
+    }
 
 
 # ============================================
