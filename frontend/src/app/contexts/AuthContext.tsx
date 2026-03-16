@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import type { User, CourseProgress, BookDownload } from '../types';
 
 interface AuthContextType {
@@ -16,6 +16,50 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const ACCESS_TOKEN_KEY = 'code_academy_access_token';
+const REFRESH_TOKEN_KEY = 'code_academy_refresh_token';
+
+type ApiUser = {
+  id: number | string;
+  email: string;
+  name?: string;
+  first_name?: string;
+  last_name?: string;
+};
+
+function mapApiUserToFrontendUser(apiUser: ApiUser): User {
+  const composedName = `${apiUser.first_name ?? ''} ${apiUser.last_name ?? ''}`.trim();
+
+  return {
+    id: String(apiUser.id),
+    email: apiUser.email,
+    name: apiUser.name || composedName || apiUser.email.split('@')[0],
+  };
+}
+
+async function parseApiError(response: Response): Promise<string> {
+  try {
+    const data = await response.json();
+
+    if (typeof data?.detail === 'string') {
+      return data.detail;
+    }
+
+    if (typeof data?.message === 'string') {
+      return data.message;
+    }
+
+    const firstFieldError = Object.values(data ?? {}).find((value) => Array.isArray(value));
+    if (Array.isArray(firstFieldError) && firstFieldError.length > 0) {
+      return String(firstFieldError[0]);
+    }
+  } catch {
+    // ignored
+  }
+
+  return 'Ocurrió un error inesperado.';
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [purchasedProducts, setPurchasedProducts] = useState<string[]>([]);
@@ -23,23 +67,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [bookDownloads, setBookDownloads] = useState<BookDownload[]>([]);
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    // Simple validation for demo
-    if (email && password.length >= 6) {
-      setUser({
-        id: '1',
-        email,
-        name: email.split('@')[0],
-        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop'
+    try {
+      const response = await fetch('/api/auth/login/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
       });
+
+      if (!response.ok) {
+        return false;
+      }
+
+      const data = await response.json();
+
+      localStorage.setItem(ACCESS_TOKEN_KEY, data.tokens.access);
+      localStorage.setItem(REFRESH_TOKEN_KEY, data.tokens.refresh);
+      setUser(mapApiUserToFrontendUser(data.user));
       return true;
+    } catch {
+      return false;
     }
-    return false;
   };
 
   const logout = () => {
+    const access = localStorage.getItem(ACCESS_TOKEN_KEY);
+    const refresh = localStorage.getItem(REFRESH_TOKEN_KEY);
+
+    if (access && refresh) {
+      fetch('/api/auth/logout/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${access}`,
+        },
+        body: JSON.stringify({ refresh }),
+      }).catch(() => {
+        // Si falla el logout remoto, igual cerramos localmente la sesión.
+      });
+    }
+
+    localStorage.removeItem(ACCESS_TOKEN_KEY);
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
     setUser(null);
     setPurchasedProducts([]);
     setCourseProgress([]);
@@ -47,20 +117,67 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const register = async (email: string, password: string, name: string): Promise<boolean> => {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    if (email && password.length >= 6 && name) {
-      setUser({
-        id: '1',
-        email,
-        name,
-        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop'
+    try {
+      const response = await fetch('/api/auth/register/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          name,
+          password,
+          password_confirm: password,
+          preferred_language: 'es',
+        }),
       });
+
+      if (!response.ok) {
+        await parseApiError(response);
+        return false;
+      }
+
+      const data = await response.json();
+      localStorage.setItem(ACCESS_TOKEN_KEY, data.tokens.access);
+      localStorage.setItem(REFRESH_TOKEN_KEY, data.tokens.refresh);
+      setUser(mapApiUserToFrontendUser(data.user));
+
       return true;
+    } catch {
+      return false;
     }
-    return false;
   };
+
+  useEffect(() => {
+    async function bootstrapSession() {
+      const access = localStorage.getItem(ACCESS_TOKEN_KEY);
+      if (!access) {
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/auth/profile/', {
+          headers: {
+            Authorization: `Bearer ${access}`,
+          },
+        });
+
+        if (!response.ok) {
+          localStorage.removeItem(ACCESS_TOKEN_KEY);
+          localStorage.removeItem(REFRESH_TOKEN_KEY);
+          return;
+        }
+
+        const data = await response.json();
+        setUser(mapApiUserToFrontendUser(data));
+      } catch {
+        localStorage.removeItem(ACCESS_TOKEN_KEY);
+        localStorage.removeItem(REFRESH_TOKEN_KEY);
+      }
+    }
+
+    bootstrapSession();
+  }, []);
 
   const addPurchasedProduct = (productId: string) => {
     if (!purchasedProducts.includes(productId)) {
