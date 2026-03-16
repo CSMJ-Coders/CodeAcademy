@@ -22,11 +22,13 @@ export function Login() {
       if (success) {
         const redirect = searchParams.get('redirect') || '/';
         navigate(redirect);
-      } else {
-        setError('Credenciales inválidas. Por favor, intenta nuevamente.');
       }
     } catch (err) {
-      setError('Ocurrió un error. Por favor, intenta nuevamente.');
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Ocurrió un error. Por favor, intenta nuevamente.');
+      }
     } finally {
       setLoading(false);
     }
@@ -116,12 +118,6 @@ export function Login() {
           </div>
         </div>
 
-        {/* Demo Info */}
-        <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="text-sm text-blue-800 text-center">
-            <strong>Demo:</strong> Usa cualquier email válido y una contraseña de al menos 6 caracteres
-          </p>
-        </div>
       </div>
     </div>
   );

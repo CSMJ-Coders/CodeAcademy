@@ -49,6 +49,11 @@ async function parseApiError(response: Response): Promise<string> {
       return data.message;
     }
 
+    const firstStringFieldError = Object.values(data ?? {}).find((value) => typeof value === 'string');
+    if (typeof firstStringFieldError === 'string') {
+      return firstStringFieldError;
+    }
+
     const firstFieldError = Object.values(data ?? {}).find((value) => Array.isArray(value));
     if (Array.isArray(firstFieldError) && firstFieldError.length > 0) {
       return String(firstFieldError[0]);
@@ -66,6 +71,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [courseProgress, setCourseProgress] = useState<CourseProgress[]>([]);
   const [bookDownloads, setBookDownloads] = useState<BookDownload[]>([]);
 
+  const refreshAccessToken = async (): Promise<string | null> => {
+    const refresh = localStorage.getItem(REFRESH_TOKEN_KEY);
+    if (!refresh) {
+      return null;
+    }
+
+    try {
+      const response = await fetch('/api/auth/token/refresh/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ refresh }),
+      });
+
+      if (!response.ok) {
+        return null;
+      }
+
+      const data = await response.json();
+      localStorage.setItem(ACCESS_TOKEN_KEY, data.access);
+      if (data.refresh) {
+        localStorage.setItem(REFRESH_TOKEN_KEY, data.refresh);
+      }
+
+      return data.access;
+    } catch {
+      return null;
+    }
+  };
+
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       const response = await fetch('/api/auth/login/', {
@@ -77,7 +113,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (!response.ok) {
-        return false;
+        const errorMessage = await parseApiError(response);
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
@@ -86,8 +123,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem(REFRESH_TOKEN_KEY, data.tokens.refresh);
       setUser(mapApiUserToFrontendUser(data.user));
       return true;
-    } catch {
-      return false;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('No se pudo iniciar sesión. Intenta nuevamente.');
     }
   };
 
@@ -133,8 +173,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (!response.ok) {
-        await parseApiError(response);
-        return false;
+        const errorMessage = await parseApiError(response);
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
@@ -143,8 +183,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(mapApiUserToFrontendUser(data.user));
 
       return true;
-    } catch {
-      return false;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('No se pudo crear la cuenta. Intenta nuevamente.');
     }
   };
 
@@ -156,11 +199,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       try {
-        const response = await fetch('/api/auth/profile/', {
+        let accessForRequest = access;
+        let response = await fetch('/api/auth/profile/', {
           headers: {
-            Authorization: `Bearer ${access}`,
+            Authorization: `Bearer ${accessForRequest}`,
           },
         });
+
+        if (response.status === 401) {
+          const newAccess = await refreshAccessToken();
+          if (!newAccess) {
+            localStorage.removeItem(ACCESS_TOKEN_KEY);
+            localStorage.removeItem(REFRESH_TOKEN_KEY);
+            return;
+          }
+
+          accessForRequest = newAccess;
+          response = await fetch('/api/auth/profile/', {
+            headers: {
+              Authorization: `Bearer ${accessForRequest}`,
+            },
+          });
+        }
 
         if (!response.ok) {
           localStorage.removeItem(ACCESS_TOKEN_KEY);
