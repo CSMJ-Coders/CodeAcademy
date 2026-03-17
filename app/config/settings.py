@@ -57,10 +57,13 @@ INSTALLED_APPS = [
     'rest_framework',                # Django REST Framework: para crear APIs
     'corsheaders',                   # CORS: permite que React hable con Django
     'rest_framework_simplejwt',      # JWT: autenticación con tokens
+    'rest_framework_simplejwt.token_blacklist',  # Blacklist de tokens (logout)
+    'django_filters',                # Filtros avanzados para APIs
 
     # --- Nuestras Apps ---
     'core',                          # Utilidades compartidas (base models, permisos)
     'users',                         # Gestión de usuarios
+    'products',                      # Catálogo de cursos y libros
 ]
 
 
@@ -185,6 +188,12 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.AllowAny',
     ),
+    # Filtros: DjangoFilterBackend activo globalmente
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.SearchFilter',
+        'rest_framework.filters.OrderingFilter',
+    ],
     # Paginación: máximo 20 resultados por página
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
