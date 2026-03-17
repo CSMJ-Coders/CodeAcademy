@@ -52,31 +52,3 @@ class ProductAdmin(admin.ModelAdmin):
     list_editable = ['is_featured', 'is_active']
     # Agrega los inlines al formulario del producto
     inlines = [ChapterInline, TableOfContentsInline]
-
-
-
-@admin.register(Category)
-class CategoryAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'icon']
-    search_fields = ['name']
-
-
-class ChapterInline(admin.TabularInline):
-    model = Chapter
-    extra = 1
-    fields = ['order', 'title', 'duration', 'video_url']
-
-
-class TableOfContentsInline(admin.TabularInline):
-    model = TableOfContentsEntry
-    extra = 1
-    fields = ['order', 'entry']
-
-
-@admin.register(Product)
-class ProductAdmin(admin.ModelAdmin):
-    list_display = ['id', 'title', 'type', 'category', 'price', 'rating', 'is_featured', 'is_active']
-    list_filter = ['type', 'level', 'language', 'is_featured', 'is_new', 'is_active', 'category']
-    search_fields = ['title', 'author', 'description']
-    list_editable = ['is_featured', 'is_active']
-    inlines = [ChapterInline, TableOfContentsInline]

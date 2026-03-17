@@ -1,9 +1,10 @@
 import { useParams, useNavigate, Link } from 'react-router';
-import { products } from '../data/mockData';
+import { useEffect, useState } from 'react';
+import { fetchProductById } from '../services/api';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { ShoppingCart, Star, Clock, FileText, BookOpen, GraduationCap, Globe, CheckCircle2 } from 'lucide-react';
-import { useState } from 'react';
+import type { Product } from '../types';
 
 export function ProductDetail() {
   const { id } = useParams();
@@ -12,9 +13,39 @@ export function ProductDetail() {
   const { user, purchasedProducts } = useAuth();
   const [showSuccess, setShowSuccess] = useState(false);
 
-  const product = products.find(p => p.id === id);
+  // Estado para el producto cargado desde el backend
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
 
-  if (!product) {
+  // Carga el producto cuando el id cambia (o al primer render)
+  useEffect(() => {
+    if (!id) return;
+    setLoading(true);
+    fetchProductById(id)
+      .then(data => {
+        if (!data) {
+          setNotFound(true);
+        } else {
+          setProduct(data);
+        }
+      })
+      .catch(err => {
+        console.error('Error cargando producto:', err);
+        setNotFound(true);
+      })
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen pt-20 flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (notFound || !product) {
     return (
       <div className="min-h-screen pt-20 flex items-center justify-center">
         <div className="text-center">
