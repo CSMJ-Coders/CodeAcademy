@@ -1,7 +1,9 @@
 import { Link } from 'react-router';
+import { useState, useEffect } from 'react';
 import { ArrowRight, Code2, Globe, Brain, Server, Database, Smartphone, CheckCircle2, Download, Languages, Zap } from 'lucide-react';
 import { ProductCard } from '../components/ProductCard';
-import { products, categories } from '../data/mockData';
+import { fetchCategories, fetchProducts } from '../services/api';
+import type { Product, Category } from '../types';
 
 const iconMap: Record<string, any> = {
   'code-2': Code2,
@@ -13,7 +15,43 @@ const iconMap: Record<string, any> = {
 };
 
 export function Home() {
-  const featuredProducts = products.filter(p => p.isFeatured);
+  // Estado para los datos que vienen del backend
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // useEffect se ejecuta UNA VEZ al montar el componente (array vacío [])
+  // Llama al backend para traer los datos reales
+  useEffect(() => {
+    async function loadData() {
+      try {
+        // Llama a ambos endpoints en paralelo para mayor velocidad
+        const [featured, cats] = await Promise.all([
+          fetchProducts({ is_featured: true }),
+          fetchCategories(),
+        ]);
+        setFeaturedProducts(featured);
+        setCategories(cats);
+      } catch (err) {
+        console.error('Error cargando datos del home:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, []);
+
+  // Skeleton de carga mientras el backend responde
+  if (loading) {
+    return (
+      <div className="min-h-screen pt-32 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-500">Cargando contenido...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">

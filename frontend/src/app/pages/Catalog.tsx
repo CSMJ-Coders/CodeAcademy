@@ -1,15 +1,15 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router';
 import { ProductCard } from '../components/ProductCard';
-import { products } from '../data/mockData';
+import { fetchProducts, fetchCategories } from '../services/api';
 import { SlidersHorizontal } from 'lucide-react';
-import type { ProductType, Level, Language } from '../types';
+import type { Product, Category, ProductType, Level, Language } from '../types';
 
 export function Catalog() {
   const [searchParams] = useSearchParams();
   const [showFilters, setShowFilters] = useState(true);
 
-  // Filter states
+  // Filter states — inicializados desde la URL para que los links de Home funcionen
   const [selectedType, setSelectedType] = useState<ProductType | 'all'>(
     (searchParams.get('type') as ProductType) || 'all'
   );
@@ -21,44 +21,41 @@ export function Catalog() {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 200]);
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
 
-  // Get unique categories
-  const categories = useMemo(() => {
-    const cats = Array.from(new Set(products.map(p => p.category)));
-    return cats;
+  // Datos del backend
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Carga las categorías una sola vez al montar el componente
+  useEffect(() => {
+    fetchCategories()
+      .then(setCategories)
+      .catch(err => console.error('Error cargando categorías:', err));
   }, []);
 
-  // Filter products
+  // Cada vez que cambia un filtro (tipo, nivel, idioma, categoría, búsqueda),
+  // hacemos una nueva petición al backend con los filtros como query params.
+  // El price range no está en el API, se aplica abajo como filtro local.
+  useEffect(() => {
+    setLoading(true);
+    fetchProducts({
+      type:           selectedType     !== 'all' ? selectedType     : undefined,
+      level:          selectedLevel    !== 'all' ? selectedLevel    : undefined,
+      language:       selectedLanguage !== 'all' ? selectedLanguage : undefined,
+      category__name: selectedCategory !== 'all' ? selectedCategory : undefined,
+      search:         searchQuery || undefined,
+    })
+      .then(setProducts)
+      .catch(err => console.error('Error cargando productos:', err))
+      .finally(() => setLoading(false));
+  }, [selectedType, selectedLevel, selectedLanguage, selectedCategory, searchQuery]);
+
+  // Filtro de precio local: se aplica en el cliente sobre los resultados del backend
   const filteredProducts = useMemo(() => {
-    return products.filter(product => {
-      // Type filter
-      if (selectedType !== 'all' && product.type !== selectedType) return false;
-      
-      // Level filter
-      if (selectedLevel !== 'all' && product.level !== selectedLevel) return false;
-      
-      // Language filter
-      if (selectedLanguage !== 'all' && product.language !== selectedLanguage) return false;
-      
-      // Category filter
-      if (selectedCategory !== 'all' && product.category !== selectedCategory) return false;
-      
-      // Price filter
-      if (product.price < priceRange[0] || product.price > priceRange[1]) return false;
-      
-      // Search filter
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        return (
-          product.title.toLowerCase().includes(query) ||
-          product.author.toLowerCase().includes(query) ||
-          product.category.toLowerCase().includes(query) ||
-          product.description.toLowerCase().includes(query)
-        );
-      }
-      
-      return true;
-    });
-  }, [selectedType, selectedLevel, selectedLanguage, selectedCategory, priceRange, searchQuery]);
+    return products.filter(
+      p => p.price >= priceRange[0] && p.price <= priceRange[1]
+    );
+  }, [products, priceRange]);
 
   const clearFilters = () => {
     setSelectedType('all');
@@ -76,7 +73,10 @@ export function Catalog() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Catálogo de Productos</h1>
           <p className="text-gray-600">
-            {filteredProducts.length} {filteredProducts.length === 1 ? 'producto encontrado' : 'productos encontrados'}
+            {loading
+              ? 'Buscando productos...'
+              : `${filteredProducts.length} ${filteredProducts.length === 1 ? 'producto encontrado' : 'productos encontrados'}`
+            }
           </p>
         </div>
 
@@ -233,15 +233,15 @@ export function Catalog() {
                     <span className="text-sm text-gray-700">Todas</span>
                   </label>
                   {categories.map(cat => (
-                    <label key={cat} className="flex items-center">
+                    <label key={cat.id} className="flex items-center">
                       <input
                         type="radio"
                         name="category"
-                        checked={selectedCategory === cat}
-                        onChange={() => setSelectedCategory(cat)}
+                        checked={selectedCategory === cat.name}
+                        onChange={() => setSelectedCategory(cat.name)}
                         className="mr-2"
                       />
-                      <span className="text-sm text-gray-700">{cat}</span>
+                      <span className="text-sm text-gray-700">{cat.name}</span>
                     </label>
                   ))}
                 </div>
@@ -279,7 +279,11 @@ export function Catalog() {
               <span>Filtros</span>
             </button>
 
-            {filteredProducts.length > 0 ? (
+            {loading ? (
+              <div className="flex items-center justify-center py-20">
+                <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : filteredProducts.length > 0 ? (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredProducts.map(product => (
                   <ProductCard key={product.id} product={product} />
