@@ -34,11 +34,13 @@ export function Register() {
       const success = await register(email, password, name);
       if (success) {
         navigate('/');
-      } else {
-        setError('No se pudo crear la cuenta. Por favor, intenta nuevamente.');
       }
     } catch (err) {
-      setError('Ocurrió un error. Por favor, intenta nuevamente.');
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Ocurrió un error. Por favor, intenta nuevamente.');
+      }
     } finally {
       setLoading(false);
     }
