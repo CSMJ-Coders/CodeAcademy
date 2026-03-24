@@ -1,3 +1,13 @@
+"""
+orders/tests.py
+===============
+Cobertura principal de Sprint 3:
+- seguridad (auth y ownership),
+- creación de órdenes,
+- cálculo/estado,
+- integración Stripe mockeada.
+"""
+
 from decimal import Decimal
 from unittest.mock import patch, MagicMock
 
@@ -17,6 +27,7 @@ User = get_user_model()
 
 class OrdersAPITests(APITestCase):
 	def setUp(self):
+		# Usuarios de prueba (propietario y tercero para validar ownership).
 		self.user = User.objects.create_user(
 			username='camilo',
 			email='camilo@example.com',
@@ -28,6 +39,7 @@ class OrdersAPITests(APITestCase):
 			password='SecurePass123!',
 		)
 
+		# Catálogo mínimo para comprar (1 curso + 1 libro).
 		self.category = Category.objects.create(name='Python', icon='code-2')
 		self.course = Product.objects.create(
 			title='Python Pro',
@@ -56,10 +68,12 @@ class OrdersAPITests(APITestCase):
 			is_active=True,
 		)
 
+		# Endpoints objetivo del test suite.
 		self.list_create_url = reverse('order-list-create')
 		self.create_intent_url = reverse('order-create-intent')
 
 	def test_create_order_requires_authentication(self):
+		"""El checkout no debe aceptar usuarios anónimos."""
 		payload = {'items': [{'product_id': self.course.id, 'quantity': 1}]}
 
 		response = self.client.post(self.list_create_url, payload, format='json')
@@ -67,6 +81,7 @@ class OrdersAPITests(APITestCase):
 		self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 	def test_authenticated_user_can_create_order_and_unlock_products(self):
+		"""Flujo sandbox: crea orden completed y desbloquea productos."""
 		self.client.force_authenticate(user=self.user)
 		payload = {
 			'items': [
@@ -87,6 +102,7 @@ class OrdersAPITests(APITestCase):
 		self.assertTrue(self.user.purchased_products.filter(id=self.book.id).exists())
 
 	def test_order_list_returns_only_orders_of_authenticated_user(self):
+		"""Un usuario solo ve sus órdenes (aislamiento de datos)."""
 		user_order = Order.objects.create(
 			user=self.user,
 			status=Order.STATUS_COMPLETED,
@@ -110,6 +126,7 @@ class OrdersAPITests(APITestCase):
 		self.assertEqual(response.data['results'][0]['id'], user_order.id)
 
 	def test_order_detail_for_other_user_returns_404(self):
+		"""No se permite leer órdenes de otro usuario."""
 		other_order = Order.objects.create(
 			user=self.other_user,
 			status=Order.STATUS_COMPLETED,
@@ -126,6 +143,7 @@ class OrdersAPITests(APITestCase):
 	@patch('orders.serializers.stripe.PaymentIntent.create')
 	@override_settings(STRIPE_SECRET_KEY='sk_test_123', STRIPE_CURRENCY='usd')
 	def test_create_stripe_payment_intent(self, mock_create):
+		"""Create-intent debe dejar orden pending y devolver client_secret."""
 		self.client.force_authenticate(user=self.user)
 		mock_create.return_value = MagicMock(id='pi_test_123', client_secret='cs_test_123')
 
@@ -141,6 +159,7 @@ class OrdersAPITests(APITestCase):
 	@patch('orders.views.stripe.PaymentIntent.retrieve')
 	@override_settings(STRIPE_SECRET_KEY='sk_test_123')
 	def test_confirm_stripe_payment_marks_order_completed_and_unlocks_products(self, mock_retrieve):
+		"""Confirmación Stripe exitosa: completed + acceso otorgado."""
 		order = Order.objects.create(
 			user=self.user,
 			status=Order.STATUS_PENDING,

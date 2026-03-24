@@ -1,3 +1,15 @@
+"""
+orders/views.py
+===============
+API del Sprint 3 (órdenes + Stripe).
+
+Tenemos dos tipos de confirmación de pago:
+1) Confirmación síncrona (`/orders/<id>/confirm/`) para feedback inmediato al frontend.
+2) Confirmación asíncrona por webhook (`/orders/webhook/stripe/`) como fuente de verdad.
+
+El webhook es la práctica recomendada en producción.
+"""
+
 import json
 
 import stripe
@@ -12,12 +24,14 @@ from .serializers import CreateOrderSerializer, CreateStripePaymentIntentSeriali
 
 
 def _grant_user_access_for_order(order: Order):
+	"""Otorga acceso a todos los productos de la orden al usuario comprador."""
 	product_ids = list(order.items.values_list('product_id', flat=True))
 	if product_ids:
 		order.user.purchased_products.add(*product_ids)
 
 
 def _mark_order_completed(order: Order):
+	"""Marca la orden como completada y desbloquea contenido."""
 	if order.status != Order.STATUS_COMPLETED:
 		order.status = Order.STATUS_COMPLETED
 		order.save(update_fields=['status', 'updated_at'])
@@ -25,12 +39,14 @@ def _mark_order_completed(order: Order):
 
 
 def _mark_order_failed(order: Order):
+	"""Marca la orden como fallida sin otorgar acceso."""
 	if order.status != Order.STATUS_FAILED:
 		order.status = Order.STATUS_FAILED
 		order.save(update_fields=['status', 'updated_at'])
 
 
 class OrderListCreateView(generics.ListCreateAPIView):
+	"""GET lista órdenes del usuario autenticado. POST crea orden sandbox."""
 	permission_classes = [IsAuthenticated]
 
 	def get_queryset(self):
@@ -55,6 +71,7 @@ class OrderListCreateView(generics.ListCreateAPIView):
 
 
 class OrderDetailView(generics.RetrieveAPIView):
+	"""Detalle de orden (solo propietario)."""
 	permission_classes = [IsAuthenticated]
 	serializer_class = OrderSerializer
 
@@ -68,6 +85,7 @@ class OrderDetailView(generics.RetrieveAPIView):
 
 
 class CreateStripePaymentIntentView(APIView):
+	"""Crea orden pending + PaymentIntent y devuelve `client_secret` al frontend."""
 	permission_classes = [IsAuthenticated]
 
 	def post(self, request):
@@ -88,6 +106,10 @@ class CreateStripePaymentIntentView(APIView):
 
 
 class ConfirmStripePaymentView(APIView):
+	"""
+	Confirma estado de pago consultando Stripe directamente.
+	Útil justo después de `confirmCardPayment` para actualizar UX al instante.
+	"""
 	permission_classes = [IsAuthenticated]
 
 	def post(self, request, pk):
@@ -126,6 +148,10 @@ class ConfirmStripePaymentView(APIView):
 
 
 class StripeWebhookView(APIView):
+	"""
+	Endpoint receptor de eventos Stripe.
+	Este endpoint debe ser llamado por Stripe (o Stripe CLI en local).
+	"""
 	permission_classes = [AllowAny]
 	authentication_classes = []
 
@@ -134,9 +160,11 @@ class StripeWebhookView(APIView):
 
 		try:
 			if settings.STRIPE_WEBHOOK_SECRET:
+				# Modo producción/seguro: validar firma del webhook.
 				signature = request.META.get('HTTP_STRIPE_SIGNATURE')
 				event = stripe.Webhook.construct_event(payload, signature, settings.STRIPE_WEBHOOK_SECRET)
 			else:
+				# Fallback local (desarrollo rápido sin firma).
 				event = json.loads(payload.decode('utf-8'))
 		except Exception:
 			return Response({'detail': 'Webhook inválido.'}, status=status.HTTP_400_BAD_REQUEST)

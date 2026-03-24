@@ -10,6 +10,14 @@ import { CreditCard, CheckCircle2, XCircle } from 'lucide-react';
 const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string | undefined;
 const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null;
 
+/**
+ * Form de pago aislado para usar hooks de Stripe (`useStripe`, `useElements`).
+ * Flujo:
+ * 1) backend crea PaymentIntent,
+ * 2) Stripe confirma la tarjeta,
+ * 3) backend confirma estado de orden,
+ * 4) se notifica éxito al componente padre.
+ */
 function StripePaymentForm({
   items,
   onSuccess,
@@ -33,6 +41,7 @@ function StripePaymentForm({
     setErrorMessage('');
 
     try {
+      // Paso 1: crear intención de pago (backend).
       const { clientSecret, order } = await createStripePaymentIntent(
         items.map((item) => ({
           product_id: Number(item.product.id),
@@ -45,6 +54,7 @@ function StripePaymentForm({
         throw new Error('No se pudo inicializar el formulario de tarjeta.');
       }
 
+      // Paso 2: confirmar tarjeta en Stripe.js (cliente).
       const result = await stripe.confirmCardPayment(clientSecret, {
         payment_method: {
           card: cardElement,
@@ -55,6 +65,7 @@ function StripePaymentForm({
         throw new Error(result.error.message || 'No se pudo confirmar el pago.');
       }
 
+      // Paso 3: confirmar estado en backend y desbloquear acceso.
       await confirmStripeOrderPayment(order.id);
       setPaymentStatus('success');
       setTimeout(() => onSuccess(order.id), 900);
@@ -142,6 +153,7 @@ export function Checkout() {
   }
 
   const handlePaymentSuccess = (orderId: string) => {
+    // UX inmediata del cliente. El backend ya guardó la compra.
     items.forEach((item) => addPurchasedProduct(item.product.id));
     clearCart();
     navigate(`/order-confirmation/${orderId}`);
@@ -184,6 +196,7 @@ export function Checkout() {
 
               {!stripePromise ? (
                 <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-sm">
+                  {/* Mensaje explícito para que cualquier dev sepa qué falta configurar. */}
                   Configura VITE_STRIPE_PUBLISHABLE_KEY en el frontend para habilitar pagos con Stripe.
                 </div>
               ) : (

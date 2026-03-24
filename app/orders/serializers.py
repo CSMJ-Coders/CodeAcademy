@@ -1,3 +1,15 @@
+"""
+orders/serializers.py
+=====================
+Serializers del flujo de órdenes y pagos.
+
+Responsabilidades:
+- Validar entrada del checkout.
+- Calcular totales en servidor.
+- Crear la orden y sus ítems.
+- Integrar Stripe (create PaymentIntent en modo test/live).
+"""
+
 from decimal import Decimal
 
 import stripe
@@ -12,6 +24,7 @@ from .models import Order, OrderItem
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
+    """Serializer de salida para cada línea de compra."""
     product_id = serializers.IntegerField(source='product.id', read_only=True)
     product = ProductListSerializer(read_only=True)
 
@@ -29,6 +42,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
 
 class OrderSerializer(serializers.ModelSerializer):
+    """Serializer de salida de una orden completa con sus ítems."""
     user_id = serializers.IntegerField(source='user.id', read_only=True)
     items = OrderItemSerializer(many=True, read_only=True)
 
@@ -49,6 +63,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
 
 class CreateOrderItemInputSerializer(serializers.Serializer):
+    """Entrada mínima esperada por ítem desde el frontend."""
     product_id = serializers.IntegerField(min_value=1)
     quantity = serializers.IntegerField(min_value=1, default=1)
 
@@ -64,6 +79,12 @@ class CreateOrderSerializer(serializers.Serializer):
     items = CreateOrderItemInputSerializer(many=True)
 
     def validate_items(self, items):
+        """
+        Valida que:
+        - llegue al menos 1 ítem,
+        - todos los productos existan,
+        - y estén activos.
+        """
         if not items:
             raise serializers.ValidationError('Debes enviar al menos un producto.')
 
@@ -78,6 +99,7 @@ class CreateOrderSerializer(serializers.Serializer):
         return items
 
     def _build_products_map(self, items_data):
+        """Optimiza consultas para resolver productos por id una sola vez."""
         return {
             product.id: product
             for product in Product.objects.filter(
@@ -87,6 +109,13 @@ class CreateOrderSerializer(serializers.Serializer):
         }
 
     def _create_order_and_items(self, user, items_data, status, provider, payment_reference=''):
+        """
+        Lógica compartida:
+        - crea cabecera de orden,
+        - crea ítems,
+        - calcula total,
+        - devuelve ids de productos para desbloqueo posterior.
+        """
         product_map = self._build_products_map(items_data)
 
         order_total = Decimal('0.00')
@@ -122,6 +151,11 @@ class CreateOrderSerializer(serializers.Serializer):
 
     @transaction.atomic
     def create(self, validated_data):
+        """
+        Flujo sandbox (sin pasarela real):
+        - crea orden `completed`
+        - desbloquea productos al usuario
+        """
         user = self.context['request'].user
         items_data = validated_data['items']
         order, purchased_product_ids = self._create_order_and_items(
@@ -139,6 +173,13 @@ class CreateOrderSerializer(serializers.Serializer):
 
 
 class CreateStripePaymentIntentSerializer(CreateOrderSerializer):
+    """
+    Flujo Stripe real:
+    - crea orden en `pending`
+    - crea PaymentIntent en Stripe
+    - guarda `payment_reference` con el id del PaymentIntent
+    """
+
     @transaction.atomic
     def create(self, validated_data):
         if not settings.STRIPE_SECRET_KEY:

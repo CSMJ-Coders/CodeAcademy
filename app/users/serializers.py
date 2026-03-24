@@ -8,6 +8,7 @@ from .models import User
 
 class UserProfileSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
+    # Se envía como lista de ids string para que frontend desbloquee contenido comprado.
     purchased_products = serializers.SerializerMethodField()
 
     class Meta:
@@ -31,6 +32,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         return full_name or obj.username or obj.email
 
     def get_purchased_products(self, obj):
+        # values_list evita traer objetos completos y reduce costo de serialización.
         return [str(product_id) for product_id in obj.purchased_products.values_list('id', flat=True)]
 
 

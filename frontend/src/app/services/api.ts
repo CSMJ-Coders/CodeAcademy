@@ -150,6 +150,7 @@ function mapProduct(api: ApiProduct): Product {
 }
 
 function mapOrder(api: ApiOrder): Order {
+  // El backend guarda precios como string decimal; aquí normalizamos a number.
   return {
     id: String(api.id),
     userId: String(api.user_id),
@@ -164,6 +165,7 @@ function mapOrder(api: ApiOrder): Order {
 }
 
 function getAuthHeaders(): HeadersInit {
+  // Todas las rutas de órdenes son protegidas con JWT.
   const access = localStorage.getItem(ACCESS_TOKEN_KEY);
   if (!access) {
     throw new Error('No hay sesión activa. Inicia sesión para continuar.');
@@ -240,6 +242,7 @@ export async function fetchProductById(id: string): Promise<Product | null> {
 }
 
 export async function createOrder(orderItems: Array<{ product_id: number; quantity: number }>): Promise<Order> {
+  // Flujo sandbox (sin pasarela real). Se mantiene para pruebas internas.
   const res = await fetch('/api/orders/', {
     method: 'POST',
     headers: getAuthHeaders(),
@@ -257,6 +260,7 @@ export async function createOrder(orderItems: Array<{ product_id: number; quanti
 export async function createStripePaymentIntent(
   orderItems: Array<{ product_id: number; quantity: number }>
 ): Promise<{ clientSecret: string; publishableKey: string; order: Order }> {
+  // Flujo real: crea una orden pending y un PaymentIntent en Stripe.
   const res = await fetch('/api/orders/create-intent/', {
     method: 'POST',
     headers: getAuthHeaders(),
@@ -276,6 +280,7 @@ export async function createStripePaymentIntent(
 }
 
 export async function confirmStripeOrderPayment(orderId: string): Promise<Order> {
+  // Confirmación síncrona contra Stripe para reflejar estado al usuario.
   const res = await fetch(`/api/orders/${orderId}/confirm/`, {
     method: 'POST',
     headers: getAuthHeaders(),
@@ -290,6 +295,7 @@ export async function confirmStripeOrderPayment(orderId: string): Promise<Order>
 }
 
 export async function fetchMyOrders(): Promise<Order[]> {
+  // Historial paginado de órdenes del usuario autenticado.
   const res = await fetch('/api/orders/', {
     headers: getAuthHeaders(),
   });
@@ -303,6 +309,7 @@ export async function fetchMyOrders(): Promise<Order[]> {
 }
 
 export async function fetchOrderById(orderId: string): Promise<Order | null> {
+  // Detalle de una orden específica (en pantalla de confirmación, por ejemplo).
   const res = await fetch(`/api/orders/${orderId}/`, {
     headers: getAuthHeaders(),
   });
