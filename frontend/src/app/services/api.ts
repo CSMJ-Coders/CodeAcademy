@@ -83,6 +83,12 @@ interface ApiOrder {
   items: ApiOrderItem[];
 }
 
+interface CreateStripeIntentResponse {
+  client_secret: string;
+  publishable_key: string;
+  order: ApiOrder;
+}
+
 // Respuesta paginada de DRF (lo que devuelve /api/products/)
 interface PaginatedResponse<T> {
   count: number;
@@ -242,6 +248,41 @@ export async function createOrder(orderItems: Array<{ product_id: number; quanti
 
   if (!res.ok) {
     throw new Error('No se pudo crear la orden. Verifica tu carrito e intenta nuevamente.');
+  }
+
+  const data: ApiOrder = await res.json();
+  return mapOrder(data);
+}
+
+export async function createStripePaymentIntent(
+  orderItems: Array<{ product_id: number; quantity: number }>
+): Promise<{ clientSecret: string; publishableKey: string; order: Order }> {
+  const res = await fetch('/api/orders/create-intent/', {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ items: orderItems }),
+  });
+
+  if (!res.ok) {
+    throw new Error('No se pudo iniciar el pago con Stripe.');
+  }
+
+  const data: CreateStripeIntentResponse = await res.json();
+  return {
+    clientSecret: data.client_secret,
+    publishableKey: data.publishable_key,
+    order: mapOrder(data.order),
+  };
+}
+
+export async function confirmStripeOrderPayment(orderId: string): Promise<Order> {
+  const res = await fetch(`/api/orders/${orderId}/confirm/`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    throw new Error('No se pudo confirmar el estado del pago.');
   }
 
   const data: ApiOrder = await res.json();

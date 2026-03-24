@@ -246,6 +246,17 @@ CORS_ALLOW_CREDENTIALS = True
 
 
 # ============================================
+# Stripe (pasarela de pagos)
+# ============================================
+# En desarrollo usaremos llaves TEST de Stripe.
+# Nunca subir llaves reales a git.
+STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', '')
+STRIPE_PUBLISHABLE_KEY = os.environ.get('STRIPE_PUBLISHABLE_KEY', '')
+STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET', '')
+STRIPE_CURRENCY = os.environ.get('STRIPE_CURRENCY', 'usd')
+
+
+# ============================================
 # Default Primary Key
 # ============================================
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

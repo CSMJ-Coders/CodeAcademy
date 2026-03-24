@@ -1,5 +1,7 @@
 from decimal import Decimal
 
+import stripe
+from django.conf import settings
 from django.db import transaction
 from rest_framework import serializers
 
@@ -75,12 +77,8 @@ class CreateOrderSerializer(serializers.Serializer):
 
         return items
 
-    @transaction.atomic
-    def create(self, validated_data):
-        user = self.context['request'].user
-        items_data = validated_data['items']
-
-        product_map = {
+    def _build_products_map(self, items_data):
+        return {
             product.id: product
             for product in Product.objects.filter(
                 id__in=[item['product_id'] for item in items_data],
@@ -88,12 +86,15 @@ class CreateOrderSerializer(serializers.Serializer):
             )
         }
 
+    def _create_order_and_items(self, user, items_data, status, provider, payment_reference=''):
+        product_map = self._build_products_map(items_data)
+
         order_total = Decimal('0.00')
         order = Order.objects.create(
             user=user,
-            status=Order.STATUS_COMPLETED,  # sandbox: pago aprobado
-            payment_provider=Order.PROVIDER_SANDBOX,
-            payment_reference='sandbox-approved',
+            status=status,
+            payment_provider=provider,
+            payment_reference=payment_reference,
             total_amount=Decimal('0.00'),
         )
 
@@ -117,8 +118,60 @@ class CreateOrderSerializer(serializers.Serializer):
 
         order.total_amount = order_total
         order.save(update_fields=['total_amount', 'updated_at'])
+        return order, purchased_product_ids
+
+    @transaction.atomic
+    def create(self, validated_data):
+        user = self.context['request'].user
+        items_data = validated_data['items']
+        order, purchased_product_ids = self._create_order_and_items(
+            user=user,
+            items_data=items_data,
+            status=Order.STATUS_COMPLETED,
+            provider=Order.PROVIDER_SANDBOX,
+            payment_reference='sandbox-approved',
+        )
 
         # Otorgar acceso al contenido comprado
         user.purchased_products.add(*purchased_product_ids)
 
         return order
+
+
+class CreateStripePaymentIntentSerializer(CreateOrderSerializer):
+    @transaction.atomic
+    def create(self, validated_data):
+        if not settings.STRIPE_SECRET_KEY:
+            raise serializers.ValidationError('Stripe no está configurado. Falta STRIPE_SECRET_KEY.')
+
+        stripe.api_key = settings.STRIPE_SECRET_KEY
+
+        user = self.context['request'].user
+        items_data = validated_data['items']
+
+        order, _ = self._create_order_and_items(
+            user=user,
+            items_data=items_data,
+            status=Order.STATUS_PENDING,
+            provider=Order.PROVIDER_STRIPE,
+        )
+
+        try:
+            payment_intent = stripe.PaymentIntent.create(
+                amount=int(order.total_amount * 100),
+                currency=settings.STRIPE_CURRENCY,
+                metadata={
+                    'order_id': str(order.id),
+                    'user_id': str(user.id),
+                },
+            )
+        except stripe.error.StripeError as exc:
+            raise serializers.ValidationError(f'No se pudo crear el PaymentIntent: {str(exc)}')
+
+        order.payment_reference = payment_intent.id
+        order.save(update_fields=['payment_reference', 'updated_at'])
+
+        return {
+            'order': order,
+            'client_secret': payment_intent.client_secret,
+        }

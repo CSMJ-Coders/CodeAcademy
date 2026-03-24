@@ -1,7 +1,9 @@
 from decimal import Decimal
+from unittest.mock import patch, MagicMock
 
 from django.contrib.auth import get_user_model
 from django.urls import reverse
+from django.test import override_settings
 from rest_framework import status
 from rest_framework.test import APITestCase
 
@@ -55,6 +57,7 @@ class OrdersAPITests(APITestCase):
 		)
 
 		self.list_create_url = reverse('order-list-create')
+		self.create_intent_url = reverse('order-create-intent')
 
 	def test_create_order_requires_authentication(self):
 		payload = {'items': [{'product_id': self.course.id, 'quantity': 1}]}
@@ -119,5 +122,47 @@ class OrdersAPITests(APITestCase):
 		response = self.client.get(reverse('order-detail', args=[other_order.id]))
 
 		self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+	@patch('orders.serializers.stripe.PaymentIntent.create')
+	@override_settings(STRIPE_SECRET_KEY='sk_test_123', STRIPE_CURRENCY='usd')
+	def test_create_stripe_payment_intent(self, mock_create):
+		self.client.force_authenticate(user=self.user)
+		mock_create.return_value = MagicMock(id='pi_test_123', client_secret='cs_test_123')
+
+		payload = {'items': [{'product_id': self.course.id, 'quantity': 1}]}
+		response = self.client.post(self.create_intent_url, payload, format='json')
+
+		self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+		self.assertIn('client_secret', response.data)
+		self.assertIn('order', response.data)
+		self.assertEqual(response.data['order']['status'], Order.STATUS_PENDING)
+		self.assertEqual(response.data['order']['payment_provider'], Order.PROVIDER_STRIPE)
+
+	@patch('orders.views.stripe.PaymentIntent.retrieve')
+	@override_settings(STRIPE_SECRET_KEY='sk_test_123')
+	def test_confirm_stripe_payment_marks_order_completed_and_unlocks_products(self, mock_retrieve):
+		order = Order.objects.create(
+			user=self.user,
+			status=Order.STATUS_PENDING,
+			payment_provider=Order.PROVIDER_STRIPE,
+			payment_reference='pi_test_abc',
+			total_amount=Decimal('99.99'),
+		)
+		order.items.create(
+			product=self.course,
+			product_title=self.course.title,
+			quantity=1,
+			unit_price=Decimal('99.99'),
+			line_total=Decimal('99.99'),
+		)
+
+		mock_retrieve.return_value = MagicMock(status='succeeded')
+		self.client.force_authenticate(user=self.user)
+		response = self.client.post(reverse('order-confirm-payment', args=[order.id]), {}, format='json')
+
+		self.assertEqual(response.status_code, status.HTTP_200_OK)
+		order.refresh_from_db()
+		self.assertEqual(order.status, Order.STATUS_COMPLETED)
+		self.assertTrue(self.user.purchased_products.filter(id=self.course.id).exists())
 
 # Create your tests here.

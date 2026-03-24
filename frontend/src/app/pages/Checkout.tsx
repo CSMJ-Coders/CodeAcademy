@@ -1,16 +1,136 @@
 import { useState } from 'react';
 import { useNavigate, Navigate } from 'react-router';
+import { CardElement, Elements, useElements, useStripe } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
-import { createOrder } from '../services/api';
+import { confirmStripeOrderPayment, createStripePaymentIntent } from '../services/api';
 import { CreditCard, CheckCircle2, XCircle } from 'lucide-react';
+
+const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string | undefined;
+const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null;
+
+function StripePaymentForm({
+  items,
+  onSuccess,
+}: {
+  items: Array<{ product: { id: string }; quantity: number }>;
+  onSuccess: (orderId: string) => void;
+}) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [processing, setProcessing] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<'pending' | 'success' | 'failed'>('pending');
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const handlePayment = async () => {
+    if (!stripe || !elements) {
+      return;
+    }
+
+    setProcessing(true);
+    setPaymentStatus('pending');
+    setErrorMessage('');
+
+    try {
+      const { clientSecret, order } = await createStripePaymentIntent(
+        items.map((item) => ({
+          product_id: Number(item.product.id),
+          quantity: item.quantity,
+        }))
+      );
+
+      const cardElement = elements.getElement(CardElement);
+      if (!cardElement) {
+        throw new Error('No se pudo inicializar el formulario de tarjeta.');
+      }
+
+      const result = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card: cardElement,
+        },
+      });
+
+      if (result.error) {
+        throw new Error(result.error.message || 'No se pudo confirmar el pago.');
+      }
+
+      await confirmStripeOrderPayment(order.id);
+      setPaymentStatus('success');
+      setTimeout(() => onSuccess(order.id), 900);
+    } catch (error) {
+      setPaymentStatus('failed');
+      setErrorMessage(error instanceof Error ? error.message : 'Error inesperado en el pago.');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  return (
+    <>
+      <div className="space-y-4">
+        <div className="border border-blue-600 rounded-lg p-4 bg-blue-50">
+          <label className="flex items-center space-x-3">
+            <input
+              type="radio"
+              name="payment"
+              defaultChecked
+              className="w-4 h-4 text-blue-600"
+            />
+            <CreditCard className="w-5 h-5 text-blue-600" />
+            <span className="font-medium text-gray-900">Tarjeta de Crédito/Débito (Stripe Test)</span>
+          </label>
+        </div>
+
+        <div className="border border-gray-300 rounded-lg p-4 bg-white">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Datos de tarjeta</label>
+          <CardElement
+            options={{
+              style: {
+                base: {
+                  fontSize: '16px',
+                  color: '#111827',
+                  '::placeholder': { color: '#9CA3AF' },
+                },
+              },
+            }}
+          />
+          <p className="text-xs text-gray-500 mt-3">Tarjeta de prueba: 4242 4242 4242 4242</p>
+        </div>
+      </div>
+
+      {paymentStatus === 'success' && (
+        <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center space-x-2 text-green-700">
+          <CheckCircle2 className="w-5 h-5" />
+          <span>¡Pago completado exitosamente! Redirigiendo...</span>
+        </div>
+      )}
+
+      {paymentStatus === 'failed' && (
+        <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start space-x-2 text-red-700">
+          <XCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-medium">El pago falló</p>
+            <p className="text-sm">{errorMessage || 'Por favor, verifica tus datos e intenta nuevamente.'}</p>
+          </div>
+        </div>
+      )}
+
+      <button
+        onClick={handlePayment}
+        disabled={processing || paymentStatus === 'success' || !stripe || !elements}
+        className="w-full mt-6 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {processing ? 'Procesando...' : paymentStatus === 'success' ? 'Completado' : 'Confirmar Pago'}
+      </button>
+    </>
+  );
+}
 
 export function Checkout() {
   const { user, addPurchasedProduct } = useAuth();
   const { items, totalPrice, clearCart } = useCart();
   const navigate = useNavigate();
-  const [processing, setProcessing] = useState(false);
-  const [paymentStatus, setPaymentStatus] = useState<'pending' | 'success' | 'failed'>('pending');
 
   // Redirect if not logged in or cart is empty
   if (!user) {
@@ -21,32 +141,10 @@ export function Checkout() {
     return <Navigate to="/cart" />;
   }
 
-  const handlePayment = async () => {
-    setProcessing(true);
-    setPaymentStatus('pending');
-
-    try {
-      const backendOrder = await createOrder(
-        items.map((item) => ({
-          product_id: Number(item.product.id),
-          quantity: item.quantity,
-        }))
-      );
-
-      // Sincronización inmediata de UX (el backend ya lo guardó también).
-      items.forEach((item) => addPurchasedProduct(item.product.id));
-      clearCart();
-      setPaymentStatus('success');
-      setProcessing(false);
-
-      setTimeout(() => {
-        navigate(`/order-confirmation/${backendOrder.id}`);
-      }, 1200);
-    } catch (error) {
-      console.error(error);
-      setPaymentStatus('failed');
-      setProcessing(false);
-    }
+  const handlePaymentSuccess = (orderId: string) => {
+    items.forEach((item) => addPurchasedProduct(item.product.id));
+    clearCart();
+    navigate(`/order-confirmation/${orderId}`);
   };
 
   return (
@@ -83,81 +181,15 @@ export function Checkout() {
             {/* Payment Method */}
             <div className="bg-white rounded-lg border border-gray-200 p-6">
               <h2 className="font-semibold text-gray-900 mb-4">Método de Pago</h2>
-              
-              <div className="space-y-4">
-                <div className="border border-blue-600 rounded-lg p-4 bg-blue-50">
-                  <label className="flex items-center space-x-3">
-                    <input
-                      type="radio"
-                      name="payment"
-                      defaultChecked
-                      className="w-4 h-4 text-blue-600"
-                    />
-                    <CreditCard className="w-5 h-5 text-blue-600" />
-                    <span className="font-medium text-gray-900">Tarjeta de Crédito/Débito</span>
-                  </label>
-                </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Número de Tarjeta
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="1234 5678 9012 3456"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Fecha de Expiración
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="MM/AA"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      CVV
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="123"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Nombre en la Tarjeta
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="JUAN PÉREZ"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
+              {!stripePromise ? (
+                <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-sm">
+                  Configura VITE_STRIPE_PUBLISHABLE_KEY en el frontend para habilitar pagos con Stripe.
                 </div>
-              </div>
-
-              {/* Status Messages */}
-              {paymentStatus === 'success' && (
-                <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center space-x-2 text-green-700">
-                  <CheckCircle2 className="w-5 h-5" />
-                  <span>¡Pago completado exitosamente! Redirigiendo...</span>
-                </div>
-              )}
-
-              {paymentStatus === 'failed' && (
-                <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start space-x-2 text-red-700">
-                  <XCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-medium">El pago falló</p>
-                    <p className="text-sm">Por favor, verifica tus datos e intenta nuevamente.</p>
-                  </div>
-                </div>
+              ) : (
+                <Elements stripe={stripePromise}>
+                  <StripePaymentForm items={items} onSuccess={handlePaymentSuccess} />
+                </Elements>
               )}
             </div>
           </div>
@@ -183,14 +215,6 @@ export function Checkout() {
                   </div>
                 </div>
               </div>
-
-              <button
-                onClick={handlePayment}
-                disabled={processing || paymentStatus === 'success'}
-                className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {processing ? 'Procesando...' : paymentStatus === 'success' ? 'Completado' : 'Confirmar Pago'}
-              </button>
 
               <p className="text-xs text-gray-500 text-center mt-4">
                 Al confirmar el pago, aceptas nuestros términos y condiciones
