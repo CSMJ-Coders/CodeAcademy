@@ -25,6 +25,7 @@ type ApiUser = {
   name?: string;
   first_name?: string;
   last_name?: string;
+  purchased_products?: string[];
 };
 
 function mapApiUserToFrontendUser(apiUser: ApiUser): User {
@@ -35,6 +36,10 @@ function mapApiUserToFrontendUser(apiUser: ApiUser): User {
     email: apiUser.email,
     name: apiUser.name || composedName || apiUser.email.split('@')[0],
   };
+}
+
+function mapPurchasedProducts(apiUser: ApiUser): string[] {
+  return (apiUser.purchased_products ?? []).map((id) => String(id));
 }
 
 async function parseApiError(response: Response): Promise<string> {
@@ -122,6 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem(ACCESS_TOKEN_KEY, data.tokens.access);
       localStorage.setItem(REFRESH_TOKEN_KEY, data.tokens.refresh);
       setUser(mapApiUserToFrontendUser(data.user));
+      setPurchasedProducts(mapPurchasedProducts(data.user));
       return true;
     } catch (error) {
       if (error instanceof Error) {
@@ -181,6 +187,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem(ACCESS_TOKEN_KEY, data.tokens.access);
       localStorage.setItem(REFRESH_TOKEN_KEY, data.tokens.refresh);
       setUser(mapApiUserToFrontendUser(data.user));
+      setPurchasedProducts(mapPurchasedProducts(data.user));
 
       return true;
     } catch (error) {
@@ -230,6 +237,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         const data = await response.json();
         setUser(mapApiUserToFrontendUser(data));
+        setPurchasedProducts(mapPurchasedProducts(data));
       } catch {
         localStorage.removeItem(ACCESS_TOKEN_KEY);
         localStorage.removeItem(REFRESH_TOKEN_KEY);

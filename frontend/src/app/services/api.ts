@@ -12,7 +12,9 @@
  *   Componente → llama función de este archivo → fetch al backend → mapea respuesta → retorna tipo de frontend
  */
 
-import type { Product, Category } from '../types';
+import type { Product, Category, Order } from '../types';
+
+const ACCESS_TOKEN_KEY = 'code_academy_access_token';
 
 // ─── Tipos internos del backend (como llegan del JSON) ──────────────────────
 // Estos tipos reflejan exactamente lo que devuelve Django.
@@ -57,6 +59,28 @@ interface ApiProduct {
   // Solo presentes en el endpoint de detalle:
   chapters?: ApiChapter[];
   table_of_contents?: ApiTocEntry[];
+}
+
+interface ApiOrderItem {
+  id: number;
+  product_id: number;
+  product: ApiProduct;
+  product_title: string;
+  quantity: number;
+  unit_price: string;
+  line_total: string;
+}
+
+interface ApiOrder {
+  id: number;
+  user_id: number;
+  status: 'pending' | 'completed' | 'failed';
+  payment_provider: string;
+  payment_reference: string;
+  total_amount: string;
+  created_at: string;
+  updated_at: string;
+  items: ApiOrderItem[];
 }
 
 // Respuesta paginada de DRF (lo que devuelve /api/products/)
@@ -116,6 +140,31 @@ function mapProduct(api: ApiProduct): Product {
     })),
     // Índice del libro (array de strings)
     tableOfContents: api.table_of_contents?.map(t => t.entry),
+  };
+}
+
+function mapOrder(api: ApiOrder): Order {
+  return {
+    id: String(api.id),
+    userId: String(api.user_id),
+    status: api.status,
+    total: parseFloat(api.total_amount),
+    date: api.created_at,
+    items: api.items.map((item) => ({
+      product: mapProduct(item.product),
+      quantity: item.quantity,
+    })),
+  };
+}
+
+function getAuthHeaders(): HeadersInit {
+  const access = localStorage.getItem(ACCESS_TOKEN_KEY);
+  if (!access) {
+    throw new Error('No hay sesión activa. Inicia sesión para continuar.');
+  }
+  return {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${access}`,
   };
 }
 
@@ -182,4 +231,46 @@ export async function fetchProductById(id: string): Promise<Product | null> {
   if (!res.ok) throw new Error('Error al cargar el producto');
   const data: ApiProduct = await res.json();
   return mapProduct(data);
+}
+
+export async function createOrder(orderItems: Array<{ product_id: number; quantity: number }>): Promise<Order> {
+  const res = await fetch('/api/orders/', {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ items: orderItems }),
+  });
+
+  if (!res.ok) {
+    throw new Error('No se pudo crear la orden. Verifica tu carrito e intenta nuevamente.');
+  }
+
+  const data: ApiOrder = await res.json();
+  return mapOrder(data);
+}
+
+export async function fetchMyOrders(): Promise<Order[]> {
+  const res = await fetch('/api/orders/', {
+    headers: getAuthHeaders(),
+  });
+
+  if (!res.ok) {
+    throw new Error('No se pudieron cargar tus órdenes.');
+  }
+
+  const data: PaginatedResponse<ApiOrder> = await res.json();
+  return data.results.map(mapOrder);
+}
+
+export async function fetchOrderById(orderId: string): Promise<Order | null> {
+  const res = await fetch(`/api/orders/${orderId}/`, {
+    headers: getAuthHeaders(),
+  });
+
+  if (res.status === 404) return null;
+  if (!res.ok) {
+    throw new Error('No se pudo cargar el detalle de la orden.');
+  }
+
+  const data: ApiOrder = await res.json();
+  return mapOrder(data);
 }

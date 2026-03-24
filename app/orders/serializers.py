@@ -4,18 +4,21 @@ from django.db import transaction
 from rest_framework import serializers
 
 from products.models import Product
+from products.serializers import ProductListSerializer
 
 from .models import Order, OrderItem
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
     product_id = serializers.IntegerField(source='product.id', read_only=True)
+    product = ProductListSerializer(read_only=True)
 
     class Meta:
         model = OrderItem
         fields = [
             'id',
             'product_id',
+            'product',
             'product_title',
             'quantity',
             'unit_price',

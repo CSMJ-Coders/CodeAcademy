@@ -1,10 +1,30 @@
-import { useOrders } from '../contexts/OrderContext';
+import { useEffect, useState } from 'react';
 import { Package, Calendar, DollarSign, Eye } from 'lucide-react';
-import { useState } from 'react';
+import { fetchMyOrders } from '../services/api';
+import type { Order } from '../types';
 
 export function MyOrders() {
-  const { orders } = useOrders();
+  const [orders, setOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchMyOrders()
+      .then(setOrders)
+      .catch((error) => {
+        console.error(error);
+        setOrders([]);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
+        <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto" />
+      </div>
+    );
+  }
 
   if (orders.length === 0) {
     return (
@@ -81,7 +101,7 @@ export function MyOrders() {
             {orders.map(order => (
               <tr key={order.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900">{order.id}</div>
+                  <div className="text-sm font-medium text-gray-900">#{order.id}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center space-x-2 text-sm text-gray-600">

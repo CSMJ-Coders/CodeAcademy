@@ -2,13 +2,12 @@ import { useState } from 'react';
 import { useNavigate, Navigate } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
-import { useOrders } from '../contexts/OrderContext';
+import { createOrder } from '../services/api';
 import { CreditCard, CheckCircle2, XCircle } from 'lucide-react';
 
 export function Checkout() {
   const { user, addPurchasedProduct } = useAuth();
   const { items, totalPrice, clearCart } = useCart();
-  const { createOrder, updateOrderStatus } = useOrders();
   const navigate = useNavigate();
   const [processing, setProcessing] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<'pending' | 'success' | 'failed'>('pending');
@@ -26,35 +25,25 @@ export function Checkout() {
     setProcessing(true);
     setPaymentStatus('pending');
 
-    // Simulate payment processing
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    try {
+      const backendOrder = await createOrder(
+        items.map((item) => ({
+          product_id: Number(item.product.id),
+          quantity: item.quantity,
+        }))
+      );
 
-    // Simulate 90% success rate
-    const isSuccess = Math.random() > 0.1;
-
-    if (isSuccess) {
-      // Create order
-      const order = createOrder(items, user.id, totalPrice);
-      
-      // Update order status
-      updateOrderStatus(order.id, 'completed');
-
-      // Add purchased products to user's account
-      items.forEach(item => {
-        addPurchasedProduct(item.product.id);
-      });
-
-      // Clear cart
+      // Sincronización inmediata de UX (el backend ya lo guardó también).
+      items.forEach((item) => addPurchasedProduct(item.product.id));
       clearCart();
-
       setPaymentStatus('success');
       setProcessing(false);
 
-      // Redirect to order confirmation
       setTimeout(() => {
-        navigate(`/order-confirmation/${order.id}`);
-      }, 2000);
-    } else {
+        navigate(`/order-confirmation/${backendOrder.id}`);
+      }, 1200);
+    } catch (error) {
+      console.error(error);
       setPaymentStatus('failed');
       setProcessing(false);
     }
