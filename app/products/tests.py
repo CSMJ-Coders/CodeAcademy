@@ -90,65 +90,6 @@ class ProductAPITests(TestCase):
             rating='3.0',
             is_active=False,  # ← este flag lo oculta de la API
         )
-        self.client = APIClient()
-
-        # Create categories
-        self.cat_python = Category.objects.create(name='Python', icon='code-2')
-        self.cat_web = Category.objects.create(name='Desarrollo Web', icon='globe')
-
-        # Create a course
-        self.course = Product.objects.create(
-            title='Python desde Cero',
-            type=Product.TYPE_COURSE,
-            category=self.cat_python,
-            author='María González',
-            description='Aprende Python desde cero.',
-            price='49.99',
-            original_price='99.99',
-            level=Product.LEVEL_BEGINNER,
-            language=Product.LANGUAGE_SPANISH,
-            image='https://example.com/img.jpg',
-            rating='4.8',
-            duration='40 horas',
-            is_featured=True,
-            is_active=True,
-        )
-        Chapter.objects.create(product=self.course, order=1, title='Introducción', duration='45 min')
-        Chapter.objects.create(product=self.course, order=2, title='Variables', duration='60 min')
-
-        # Create a book
-        self.book = Product.objects.create(
-            title='Clean Code',
-            type=Product.TYPE_BOOK,
-            category=self.cat_web,
-            author='Robert C. Martin',
-            description='El libro esencial sobre código limpio.',
-            price='29.99',
-            level=Product.LEVEL_INTERMEDIATE,
-            language=Product.LANGUAGE_SPANISH,
-            image='https://example.com/book.jpg',
-            rating='4.9',
-            pages=464,
-            is_featured=True,
-            is_active=True,
-        )
-        TableOfContentsEntry.objects.create(product=self.book, order=1, entry='Capítulo 1: Código Limpio')
-        TableOfContentsEntry.objects.create(product=self.book, order=2, entry='Capítulo 2: Nombres')
-
-        # Inactive product (should not appear in API)
-        self.inactive = Product.objects.create(
-            title='Producto Inactivo',
-            type=Product.TYPE_COURSE,
-            category=self.cat_python,
-            author='Test',
-            description='No debería aparecer.',
-            price='9.99',
-            level=Product.LEVEL_BEGINNER,
-            language=Product.LANGUAGE_SPANISH,
-            image='',
-            rating='3.0',
-            is_active=False,
-        )
 
     def test_list_products_returns_only_active(self):
         """GET /api/products/ should return only active products."""

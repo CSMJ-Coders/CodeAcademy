@@ -8,6 +8,7 @@ from .models import User
 
 class UserProfileSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
+    purchased_products = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -18,6 +19,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'first_name',
             'last_name',
             'name',
+            'purchased_products',
             'preferred_language',
             'is_student',
             'date_joined',
@@ -27,6 +29,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
     def get_name(self, obj):
         full_name = f'{obj.first_name} {obj.last_name}'.strip()
         return full_name or obj.username or obj.email
+
+    def get_purchased_products(self, obj):
+        return [str(product_id) for product_id in obj.purchased_products.values_list('id', flat=True)]
 
 
 class RegisterSerializer(serializers.ModelSerializer):

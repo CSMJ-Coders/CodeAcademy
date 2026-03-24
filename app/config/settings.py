@@ -68,6 +68,7 @@ INSTALLED_APPS = [
     'core',                          # Utilidades compartidas (base models, permisos)
     'users',                         # Gestión de usuarios
     'products',                      # Catálogo de cursos y libros
+    'orders',                        # Órdenes de compra y checkout
 ]
 
 

@@ -5,6 +5,14 @@ from django.db import models
 class User(AbstractUser):
     email = models.EmailField(unique=True)
 
+    # Productos que el usuario ya compró.
+    # Esto nos permitirá desbloquear contenido en dashboard/curso/libro.
+    purchased_products = models.ManyToManyField(
+        'products.Product',
+        blank=True,
+        related_name='buyers',
+    )
+
     preferred_language = models.CharField(
         max_length=10,
         choices=[
