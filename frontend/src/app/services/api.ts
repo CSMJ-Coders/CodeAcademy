@@ -89,6 +89,23 @@ interface CreateStripeIntentResponse {
   order: ApiOrder;
 }
 
+interface ApiBookDownloadPolicy {
+  book_id: number;
+  download_count: number;
+  max_downloads: number;
+  downloads_remaining: number;
+  last_downloaded_at: string | null;
+}
+
+interface ApiCourseProgress {
+  course_id: number;
+  progress_percentage: number;
+  completed_chapters: string[];
+  current_chapter: string | null;
+  updated_at: string;
+  certificate_issued?: boolean;
+}
+
 // Respuesta paginada de DRF (lo que devuelve /api/products/)
 interface PaginatedResponse<T> {
   count: number;
@@ -176,6 +193,16 @@ function getAuthHeaders(): HeadersInit {
   };
 }
 
+function getAuthHeaderOnly(): HeadersInit {
+  const access = localStorage.getItem(ACCESS_TOKEN_KEY);
+  if (!access) {
+    throw new Error('No hay sesión activa. Inicia sesión para continuar.');
+  }
+  return {
+    Authorization: `Bearer ${access}`,
+  };
+}
+
 // ─── Parámetros de filtro para /api/products/ ────────────────────────────────
 
 export interface ProductFilters {
@@ -239,6 +266,148 @@ export async function fetchProductById(id: string): Promise<Product | null> {
   if (!res.ok) throw new Error('Error al cargar el producto');
   const data: ApiProduct = await res.json();
   return mapProduct(data);
+}
+
+export async function fetchProductPreviewById(id: string): Promise<Product | null> {
+  const res = await fetch(`/api/products/${id}/preview/`);
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error('Error al cargar el contenido de muestra');
+
+  const data = await res.json();
+  return {
+    id: String(data.id),
+    title: data.title,
+    type: data.type,
+    category: '',
+    author: data.author,
+    description: data.description,
+    price: 0,
+    level: 'beginner',
+    language: 'spanish',
+    image: '',
+    rating: 0,
+    chapters: (data.preview_chapters ?? []).map((ch: ApiChapter) => ({
+      id: String(ch.id),
+      title: ch.title,
+      duration: ch.duration,
+      videoUrl: ch.video_url,
+    })),
+    tableOfContents: (data.preview_table_of_contents ?? []).map((item: ApiTocEntry) => item.entry),
+  };
+}
+
+export async function fetchBookDownloadStatus(bookId: string): Promise<{ downloadsRemaining: number; maxDownloads: number }> {
+  const res = await fetch(`/api/books/${bookId}/downloads/status/`, {
+    headers: getAuthHeaderOnly(),
+  });
+
+  if (!res.ok) {
+    throw new Error('No se pudo consultar el estado de descargas del libro.');
+  }
+
+  const data: ApiBookDownloadPolicy = await res.json();
+  return {
+    downloadsRemaining: data.downloads_remaining,
+    maxDownloads: data.max_downloads,
+  };
+}
+
+export async function downloadBookPdf(bookId: string): Promise<void> {
+  const res = await fetch(`/api/books/${bookId}/download/`, {
+    headers: getAuthHeaderOnly(),
+  });
+
+  if (!res.ok) {
+    let message = 'No se pudo descargar el libro.';
+    try {
+      const data = await res.json();
+      if (typeof data?.detail === 'string') message = data.detail;
+    } catch {
+      // ignore
+    }
+    throw new Error(message);
+  }
+
+  const blob = await res.blob();
+  const disposition = res.headers.get('content-disposition') || '';
+  const fileNameMatch = disposition.match(/filename="?([^";]+)"?/i);
+  const fileName = fileNameMatch?.[1] ?? `book-${bookId}.pdf`;
+
+  const url = window.URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = fileName;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  window.URL.revokeObjectURL(url);
+}
+
+export async function fetchCourseProgress(courseId: string): Promise<{ progress: number; completedChapters: string[]; currentChapter?: string }> {
+  const res = await fetch(`/api/courses/${courseId}/progress/`, {
+    headers: getAuthHeaderOnly(),
+  });
+
+  if (!res.ok) {
+    throw new Error('No se pudo cargar el progreso del curso.');
+  }
+
+  const data: ApiCourseProgress = await res.json();
+  return {
+    progress: data.progress_percentage,
+    completedChapters: data.completed_chapters ?? [],
+    currentChapter: data.current_chapter ?? undefined,
+  };
+}
+
+export async function completeCourseChapter(courseId: string, chapterId: string): Promise<{ progress: number; completedChapters: string[]; certificateIssued: boolean }> {
+  const res = await fetch(`/api/courses/${courseId}/progress/complete/`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ chapter_id: Number(chapterId) }),
+  });
+
+  if (!res.ok) {
+    throw new Error('No se pudo actualizar el progreso del curso.');
+  }
+
+  const data: ApiCourseProgress = await res.json();
+  return {
+    progress: data.progress_percentage,
+    completedChapters: data.completed_chapters ?? [],
+    certificateIssued: Boolean(data.certificate_issued),
+  };
+}
+
+export async function downloadCourseCertificate(courseId: string): Promise<void> {
+  const res = await fetch(`/api/courses/${courseId}/certificate/`, {
+    headers: getAuthHeaderOnly(),
+  });
+
+  if (!res.ok) {
+    let message = 'No se pudo descargar el certificado.';
+    try {
+      const data = await res.json();
+      if (typeof data?.detail === 'string') message = data.detail;
+    } catch {
+      // ignore
+    }
+    throw new Error(message);
+  }
+
+  const blob = await res.blob();
+  const disposition = res.headers.get('content-disposition') || '';
+  const fileNameMatch = disposition.match(/filename="?([^";]+)"?/i);
+  const fileName = fileNameMatch?.[1] ?? `certificate-course-${courseId}.pdf`;
+
+  const url = window.URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = fileName;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  window.URL.revokeObjectURL(url);
 }
 
 export async function createOrder(orderItems: Array<{ product_id: number; quantity: number }>): Promise<Order> {

@@ -1,6 +1,6 @@
 import { useParams, useNavigate, Link } from 'react-router';
 import { useEffect, useState } from 'react';
-import { fetchProductById } from '../services/api';
+import { fetchProductById, fetchProductPreviewById } from '../services/api';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { ShoppingCart, Star, Clock, FileText, BookOpen, GraduationCap, Globe, CheckCircle2 } from 'lucide-react';
@@ -15,6 +15,7 @@ export function ProductDetail() {
 
   // Estado para el producto cargado desde el backend
   const [product, setProduct] = useState<Product | null>(null);
+  const [preview, setPreview] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
@@ -28,6 +29,9 @@ export function ProductDetail() {
           setNotFound(true);
         } else {
           setProduct(data);
+          fetchProductPreviewById(id)
+            .then((previewData) => setPreview(previewData))
+            .catch(() => setPreview(null));
         }
       })
       .catch(err => {
@@ -227,11 +231,16 @@ export function ProductDetail() {
         </div>
 
         {/* Content Section */}
-        {product.type === 'course' && product.chapters && (
+        {product.type === 'course' && (isPurchased ? product.chapters : preview?.chapters) && (
           <div className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Contenido del Curso</h2>
+            {!isPurchased && (
+              <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+                Estás viendo solo capítulos de muestra. Compra el curso para desbloquear todo el contenido.
+              </p>
+            )}
             <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-              {product.chapters.map((chapter, index) => (
+              {(isPurchased ? product.chapters : preview?.chapters)?.map((chapter, index) => (
                 <div
                   key={chapter.id}
                   className="p-4 border-b border-gray-200 last:border-b-0 flex items-center justify-between hover:bg-gray-50"
@@ -249,12 +258,17 @@ export function ProductDetail() {
           </div>
         )}
 
-        {product.type === 'book' && product.tableOfContents && (
+        {product.type === 'book' && (isPurchased ? product.tableOfContents : preview?.tableOfContents) && (
           <div className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Tabla de Contenidos</h2>
+            {!isPurchased && (
+              <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+                Estás viendo solo el índice de muestra. Compra el libro para desbloquear el contenido completo.
+              </p>
+            )}
             <div className="bg-white border border-gray-200 rounded-lg">
               <ul className="divide-y divide-gray-200">
-                {product.tableOfContents.map((item, index) => (
+                {(isPurchased ? product.tableOfContents : preview?.tableOfContents)?.map((item, index) => (
                   <li key={index} className="p-4 hover:bg-gray-50">
                     <span className="text-gray-900">{item}</span>
                   </li>

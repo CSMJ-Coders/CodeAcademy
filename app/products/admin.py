@@ -12,7 +12,15 @@ Conceptos clave:
 """
 
 from django.contrib import admin
-from .models import Category, Product, Chapter, TableOfContentsEntry
+from .models import (
+    Category,
+    Product,
+    Chapter,
+    TableOfContentsEntry,
+    BookDownload,
+    CourseProgress,
+    CourseCertificate,
+)
 
 
 @admin.register(Category)
@@ -52,3 +60,25 @@ class ProductAdmin(admin.ModelAdmin):
     list_editable = ['is_featured', 'is_active']
     # Agrega los inlines al formulario del producto
     inlines = [ChapterInline, TableOfContentsInline]
+
+
+@admin.register(BookDownload)
+class BookDownloadAdmin(admin.ModelAdmin):
+    list_display = ['id', 'user', 'product', 'download_count', 'max_downloads', 'last_downloaded_at']
+    list_filter = ['product']
+    search_fields = ['user__email', 'product__title']
+
+
+@admin.register(CourseProgress)
+class CourseProgressAdmin(admin.ModelAdmin):
+    list_display = ['id', 'user', 'product', 'progress_percentage', 'updated_at']
+    list_filter = ['product']
+    search_fields = ['user__email', 'product__title']
+    filter_horizontal = ['completed_chapters']
+
+
+@admin.register(CourseCertificate)
+class CourseCertificateAdmin(admin.ModelAdmin):
+    list_display = ['id', 'user', 'product', 'issued_at']
+    list_filter = ['product']
+    search_fields = ['user__email', 'product__title']

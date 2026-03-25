@@ -16,6 +16,7 @@ Tablas que creamos:
 
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.conf import settings
 
 
 class Category(models.Model):
@@ -97,6 +98,8 @@ class Product(models.Model):
     level = models.CharField(max_length=15, choices=LEVEL_CHOICES)
     language = models.CharField(max_length=10, choices=LANGUAGE_CHOICES, default=LANGUAGE_SPANISH)
     image = models.URLField(max_length=500, blank=True)  # Guarda una URL de imagen
+    # Archivo protegido para libros (se sirve por endpoint autenticado).
+    book_file = models.FileField(upload_to='books/', null=True, blank=True)
     rating = models.DecimalField(
         max_digits=3, decimal_places=1,
         default=0,
@@ -147,6 +150,7 @@ class Chapter(models.Model):
     title = models.CharField(max_length=255)
     duration = models.CharField(max_length=50)           # Ej: '45 min'
     video_url = models.URLField(max_length=500, blank=True, default='#')
+    is_preview = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Capítulo'
@@ -171,6 +175,7 @@ class TableOfContentsEntry(models.Model):
     )
     order = models.PositiveSmallIntegerField(default=0)
     entry = models.CharField(max_length=255)  # Ej: 'Capítulo 1: Código Limpio'
+    is_preview = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Entrada de índice'
@@ -179,3 +184,82 @@ class TableOfContentsEntry(models.Model):
 
     def __str__(self):
         return f'{self.product.title} – {self.entry}'
+
+
+class BookDownload(models.Model):
+    """Control de descargas por usuario/libro para limitar redistribución."""
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='book_downloads')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='downloads')
+    download_count = models.PositiveIntegerField(default=0)
+    max_downloads = models.PositiveIntegerField(default=3)
+    last_downloaded_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('user', 'product')
+        verbose_name = 'Descarga de libro'
+        verbose_name_plural = 'Descargas de libros'
+
+    def __str__(self):
+        return f'{self.user_id} - {self.product_id} ({self.download_count}/{self.max_downloads})'
+
+
+class CourseProgress(models.Model):
+    """Progreso persistente por usuario y curso."""
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='course_progress')
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name='course_progress_records',
+        limit_choices_to={'type': Product.TYPE_COURSE},
+    )
+    completed_chapters = models.ManyToManyField(Chapter, blank=True, related_name='progress_records')
+    current_chapter = models.ForeignKey(
+        Chapter,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='+',
+    )
+    progress_percentage = models.PositiveSmallIntegerField(default=0)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'product')
+        verbose_name = 'Progreso de curso'
+        verbose_name_plural = 'Progresos de cursos'
+
+    def recalculate_progress(self):
+        total = self.product.chapters.count()
+        completed = self.completed_chapters.count()
+        self.progress_percentage = 0 if total == 0 else int((completed / total) * 100)
+        self.save(update_fields=['progress_percentage', 'updated_at'])
+
+    def __str__(self):
+        return f'{self.user_id} - {self.product.title} ({self.progress_percentage}%)'
+
+
+class CourseCertificate(models.Model):
+    """Certificado emitido al completar 100% un curso."""
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='course_certificates')
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name='certificates',
+        limit_choices_to={'type': Product.TYPE_COURSE},
+    )
+    pdf_file = models.FileField(upload_to='certificates/')
+    issued_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'product')
+        verbose_name = 'Certificado de curso'
+        verbose_name_plural = 'Certificados de cursos'
+
+    def __str__(self):
+        return f'Certificado {self.user_id}-{self.product_id}'

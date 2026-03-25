@@ -2,23 +2,36 @@ import { Link } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { products } from '../data/mockData';
 import { GraduationCap, Clock, Play } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { fetchCourseProgress } from '../services/api';
 
 export function MyCourses() {
-  const { purchasedProducts, courseProgress } = useAuth();
+  const { purchasedProducts } = useAuth();
+  const [progressMap, setProgressMap] = useState<Record<string, number>>({});
 
   const myCourses = products.filter(
     p => p.type === 'course' && purchasedProducts.includes(p.id)
   );
 
-  const getCourseProgress = (courseId: string) => {
-    const progress = courseProgress.find(p => p.courseId === courseId);
-    if (!progress || !progress.completedChapters) return 0;
-    
-    const course = products.find(p => p.id === courseId);
-    if (!course || !course.chapters) return 0;
-    
-    return Math.round((progress.completedChapters.length / course.chapters.length) * 100);
-  };
+  useEffect(() => {
+    const purchasedCourses = myCourses.map((course) => course.id);
+    if (purchasedCourses.length === 0) return;
+
+    Promise.all(
+      purchasedCourses.map(async (courseId) => {
+        try {
+          const progress = await fetchCourseProgress(courseId);
+          return [courseId, progress.progress] as const;
+        } catch {
+          return [courseId, 0] as const;
+        }
+      })
+    ).then((entries) => {
+      setProgressMap(Object.fromEntries(entries));
+    });
+  }, [purchasedProducts.join(',')]);
+
+  const getCourseProgress = (courseId: string) => progressMap[courseId] ?? 0;
 
   if (myCourses.length === 0) {
     return (

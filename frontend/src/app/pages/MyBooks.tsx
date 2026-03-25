@@ -2,25 +2,44 @@ import { Link } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { products } from '../data/mockData';
 import { BookOpen, Download, Eye, FileText } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { downloadBookPdf, fetchBookDownloadStatus } from '../services/api';
 
 export function MyBooks() {
-  const { purchasedProducts, bookDownloads, downloadBook } = useAuth();
+  const { purchasedProducts } = useAuth();
+  const [downloadMap, setDownloadMap] = useState<Record<string, { downloadsRemaining: number; maxDownloads: number }>>({});
 
   const myBooks = products.filter(
     p => p.type === 'book' && purchasedProducts.includes(p.id)
   );
 
-  const getBookDownloads = (bookId: string) => {
-    const download = bookDownloads.find(d => d.bookId === bookId);
-    return download || { downloadsRemaining: 0, maxDownloads: 0 };
-  };
+  useEffect(() => {
+    const purchasedBooks = myBooks.map((book) => book.id);
+    if (purchasedBooks.length === 0) return;
 
-  const handleDownload = (bookId: string, bookTitle: string) => {
-    const success = downloadBook(bookId);
-    if (success) {
-      alert(`Descargando "${bookTitle}"...`);
-    } else {
-      alert('Has alcanzado el límite de descargas para este libro.');
+    Promise.all(
+      purchasedBooks.map(async (bookId) => {
+        try {
+          const status = await fetchBookDownloadStatus(bookId);
+          return [bookId, status] as const;
+        } catch {
+          return [bookId, { downloadsRemaining: 0, maxDownloads: 0 }] as const;
+        }
+      })
+    ).then((entries) => {
+      setDownloadMap(Object.fromEntries(entries));
+    });
+  }, [purchasedProducts.join(',')]);
+
+  const getBookDownloads = (bookId: string) => downloadMap[bookId] || { downloadsRemaining: 0, maxDownloads: 0 };
+
+  const handleDownload = async (bookId: string) => {
+    try {
+      await downloadBookPdf(bookId);
+      const status = await fetchBookDownloadStatus(bookId);
+      setDownloadMap((prev) => ({ ...prev, [bookId]: status }));
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'No se pudo descargar el libro.');
     }
   };
 
@@ -101,7 +120,7 @@ export function MyBooks() {
                       <span>Leer en Línea</span>
                     </Link>
                     <button
-                      onClick={() => handleDownload(book.id, book.title)}
+                      onClick={() => handleDownload(book.id)}
                       disabled={downloads.downloadsRemaining === 0}
                       className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >

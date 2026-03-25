@@ -19,7 +19,9 @@ Ejecutar:
 
 from django.test import TestCase
 from django.urls import reverse
+from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APIClient
+from users.models import User
 from .models import Category, Product, Chapter, TableOfContentsEntry
 
 
@@ -148,3 +150,123 @@ class ProductAPITests(TestCase):
         """GET /api/products/<inactive-id>/ should return 404."""
         response = self.client.get(reverse('product-detail', args=[self.inactive.pk]))
         self.assertEqual(response.status_code, 404)
+
+
+class ProductProtectionAndProgressTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+        self.user = User.objects.create_user(
+            email='student@example.com',
+            username='student',
+            password='StrongPass123!',
+        )
+
+        category = Category.objects.create(name='Backend', icon='code-2')
+
+        self.book = Product.objects.create(
+            title='Libro Seguro',
+            type=Product.TYPE_BOOK,
+            category=category,
+            author='Autor',
+            description='Libro de prueba',
+            price='19.99',
+            level=Product.LEVEL_BEGINNER,
+            language=Product.LANGUAGE_SPANISH,
+            rating='4.5',
+        )
+        self.book.book_file.save(
+            'libro-seguro.pdf',
+            SimpleUploadedFile('libro-seguro.pdf', b'%PDF-1.4 fake', content_type='application/pdf'),
+            save=True,
+        )
+        TableOfContentsEntry.objects.create(product=self.book, order=1, entry='Intro', is_preview=True)
+        TableOfContentsEntry.objects.create(product=self.book, order=2, entry='Capítulo premium', is_preview=False)
+
+        self.course = Product.objects.create(
+            title='Curso Completo',
+            type=Product.TYPE_COURSE,
+            category=category,
+            author='Profe',
+            description='Curso de prueba',
+            price='49.99',
+            level=Product.LEVEL_BEGINNER,
+            language=Product.LANGUAGE_SPANISH,
+            rating='4.9',
+        )
+        self.chapter_1 = Chapter.objects.create(
+            product=self.course,
+            order=1,
+            title='Capítulo 1',
+            duration='10 min',
+            is_preview=True,
+        )
+        self.chapter_2 = Chapter.objects.create(
+            product=self.course,
+            order=2,
+            title='Capítulo 2',
+            duration='15 min',
+            is_preview=False,
+        )
+
+    def authenticate(self):
+        self.client.force_authenticate(user=self.user)
+
+    def test_preview_returns_only_marked_content(self):
+        response = self.client.get(reverse('product-preview', args=[self.course.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data['preview_chapters']), 1)
+        self.assertEqual(response.data['preview_chapters'][0]['id'], self.chapter_1.id)
+
+        response_book = self.client.get(reverse('product-preview', args=[self.book.pk]))
+        self.assertEqual(response_book.status_code, 200)
+        self.assertEqual(len(response_book.data['preview_table_of_contents']), 1)
+
+    def test_book_download_requires_purchase_and_respects_limit(self):
+        self.authenticate()
+
+        no_access = self.client.get(reverse('book-download', args=[self.book.pk]))
+        self.assertEqual(no_access.status_code, 403)
+
+        self.user.purchased_products.add(self.book)
+
+        first_download = self.client.get(reverse('book-download', args=[self.book.pk]))
+        self.assertEqual(first_download.status_code, 200)
+
+        status_response = self.client.get(reverse('book-download-status', args=[self.book.pk]))
+        self.assertEqual(status_response.status_code, 200)
+        self.assertEqual(status_response.data['download_count'], 1)
+
+        # Consumir las descargas restantes
+        self.client.get(reverse('book-download', args=[self.book.pk]))
+        self.client.get(reverse('book-download', args=[self.book.pk]))
+        blocked = self.client.get(reverse('book-download', args=[self.book.pk]))
+        self.assertEqual(blocked.status_code, 403)
+
+    def test_course_progress_and_certificate_flow(self):
+        self.authenticate()
+        self.user.purchased_products.add(self.course)
+
+        progress = self.client.get(reverse('course-progress', args=[self.course.pk]))
+        self.assertEqual(progress.status_code, 200)
+        self.assertEqual(progress.data['progress_percentage'], 0)
+
+        complete_1 = self.client.post(
+            reverse('course-complete-chapter', args=[self.course.pk]),
+            {'chapter_id': self.chapter_1.id},
+            format='json',
+        )
+        self.assertEqual(complete_1.status_code, 200)
+        self.assertEqual(complete_1.data['progress_percentage'], 50)
+
+        complete_2 = self.client.post(
+            reverse('course-complete-chapter', args=[self.course.pk]),
+            {'chapter_id': self.chapter_2.id},
+            format='json',
+        )
+        self.assertEqual(complete_2.status_code, 200)
+        self.assertEqual(complete_2.data['progress_percentage'], 100)
+        self.assertTrue(complete_2.data['certificate_issued'])
+
+        certificate = self.client.get(reverse('course-certificate', args=[self.course.pk]))
+        self.assertEqual(certificate.status_code, 200)
