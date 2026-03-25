@@ -36,7 +36,12 @@ DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() in ('true', '1', 'yes')
 
 # ALLOWED_HOSTS: qué dominios pueden acceder a Django.
 # En desarrollo: localhost. En producción: tu-dominio.com
-ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+_allowed_hosts_env = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1')
+ALLOWED_HOSTS = [host.strip() for host in _allowed_hosts_env.split(',') if host.strip()]
+# Hosts necesarios cuando Django recibe tráfico por proxy en Docker (Vite -> web:8000)
+for required_host in ['localhost', '127.0.0.1', 'web']:
+    if required_host not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(required_host)
 
 # USE_SQLITE_FOR_LOCAL: fallback opcional para correr tests o validar localmente
 # cuando Docker/PostgreSQL no está disponible.

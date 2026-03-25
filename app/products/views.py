@@ -24,6 +24,7 @@ Filtros disponibles en /api/products/:
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.db.models import Count, Q
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, generics, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -43,10 +44,19 @@ from .services import generate_course_certificate
 
 
 class CategoryListView(generics.ListAPIView):
-    queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = [AllowAny]
     pagination_class = None
+
+    def get_queryset(self):
+        # Solo mostrar categorías con al menos 1 producto activo.
+        # Evita categorías huérfanas en el frontend (ej: "Testing QA" sin contenido).
+        return (
+            Category.objects
+            .annotate(active_products=Count('products', filter=Q(products__is_active=True)))
+            .filter(active_products__gt=0)
+            .order_by('name')
+        )
 
 
 class ProductListView(generics.ListAPIView):

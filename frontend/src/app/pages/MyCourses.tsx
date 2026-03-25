@@ -4,6 +4,7 @@ import { products } from '../data/mockData';
 import { GraduationCap, Clock, Play } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { fetchCourseProgress } from '../services/api';
+import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 
 export function MyCourses() {
   const { purchasedProducts } = useAuth();
@@ -65,7 +66,7 @@ export function MyCourses() {
             return (
               <div key={course.id} className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
                 <div className="relative aspect-video">
-                  <img
+                  <ImageWithFallback
                     src={course.image}
                     alt={course.title}
                     className="w-full h-full object-cover"

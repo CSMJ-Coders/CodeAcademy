@@ -4,6 +4,7 @@ import { products } from '../data/mockData';
 import { BookOpen, Download, Eye, FileText } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { downloadBookPdf, fetchBookDownloadStatus } from '../services/api';
+import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 
 export function MyBooks() {
   const { purchasedProducts } = useAuth();
@@ -75,7 +76,7 @@ export function MyBooks() {
             return (
               <div key={book.id} className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
                 <div className="relative aspect-[3/4]">
-                  <img
+                  <ImageWithFallback
                     src={book.image}
                     alt={book.title}
                     className="w-full h-full object-cover"

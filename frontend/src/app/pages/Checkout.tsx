@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import { confirmStripeOrderPayment, createStripePaymentIntent } from '../services/api';
 import { CreditCard, CheckCircle2, XCircle } from 'lucide-react';
+import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 
 const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string | undefined;
 const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null;
@@ -174,7 +175,7 @@ export function Checkout() {
                 {items.map(item => (
                   <div key={item.product.id} className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                      <img
+                        <ImageWithFallback
                         src={item.product.image}
                         alt={item.product.title}
                         className="w-16 h-12 object-cover rounded"

@@ -5,6 +5,7 @@ import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { ShoppingCart, Star, Clock, FileText, BookOpen, GraduationCap, Globe, CheckCircle2 } from 'lucide-react';
 import type { Product } from '../types';
+import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 
 export function ProductDetail() {
   const { id } = useParams();
@@ -91,7 +92,7 @@ export function ProductDetail() {
           {/* Left Column - Image */}
           <div>
             <div className="aspect-video rounded-lg overflow-hidden bg-gray-100 mb-4">
-              <img
+              <ImageWithFallback
                 src={product.image}
                 alt={product.title}
                 className="w-full h-full object-cover"

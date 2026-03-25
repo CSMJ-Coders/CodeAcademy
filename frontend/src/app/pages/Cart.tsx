@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Trash2, ShoppingBag, ArrowRight } from 'lucide-react';
+import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 
 export function Cart() {
   const { items, removeFromCart, totalPrice } = useCart();
@@ -51,7 +52,7 @@ export function Cart() {
               {items.map((item) => (
                 <div key={item.product.id} className="p-6 flex gap-4">
                   {/* Image */}
-                  <img
+                  <ImageWithFallback
                     src={item.product.image}
                     alt={item.product.title}
                     className="w-32 h-24 object-cover rounded-lg"

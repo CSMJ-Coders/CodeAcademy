@@ -107,6 +107,32 @@ interface ApiCourseProgress {
   certificate_issued?: boolean;
 }
 
+function resolveProductImageUrl(image: string): string {
+  const value = (image || '').trim();
+  if (!value) return '';
+
+  // Si viene relativo del backend, lo dejamos relativo para que Vite proxy
+  // lo redirija al contenedor web (/media -> http://web:8000/media).
+  if (value.startsWith('/media/')) return value;
+  if (value.startsWith('media/')) return `/${value}`;
+
+  // Si el backend devolvió URL absoluta interna de Docker (ej: http://web:8000/media/...)
+  // la convertimos a ruta relativa navegable desde el navegador del host.
+  try {
+    const parsed = new URL(value);
+    const isInternalDockerHost = ['web', 'backend', 'django'].includes(parsed.hostname);
+    const isLocalBackend = parsed.hostname === 'localhost' && parsed.port === '8000';
+
+    if ((isInternalDockerHost || isLocalBackend) && parsed.pathname.startsWith('/media/')) {
+      return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+    }
+  } catch {
+    // Si no es URL válida, devolvemos el valor original.
+  }
+
+  return value;
+}
+
 // Respuesta paginada de DRF (lo que devuelve /api/products/)
 interface PaginatedResponse<T> {
   count: number;
@@ -149,7 +175,7 @@ function mapProduct(api: ApiProduct): Product {
     originalPrice: api.original_price ? parseFloat(api.original_price) : undefined,
     level: api.level,
     language: api.language,
-    image: api.image,
+    image: resolveProductImageUrl(api.image),
     rating: parseFloat(api.rating),
     duration: api.duration || undefined,
     pages: api.pages ?? undefined,

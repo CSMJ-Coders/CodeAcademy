@@ -146,6 +146,16 @@ class ProductAPITests(TestCase):
         self.assertIn('Python', names)
         self.assertIn('Desarrollo Web', names)
 
+    def test_category_list_excludes_categories_without_active_products(self):
+        """GET /api/categories/ should hide categories that have no active products."""
+        Category.objects.create(name='Testing QA', icon='code-2')
+
+        response = self.client.get(reverse('category-list'))
+        self.assertEqual(response.status_code, 200)
+        names = [c['name'] for c in response.data]
+
+        self.assertNotIn('Testing QA', names)
+
     def test_inactive_product_detail_returns_404(self):
         """GET /api/products/<inactive-id>/ should return 404."""
         response = self.client.get(reverse('product-detail', args=[self.inactive.pk]))

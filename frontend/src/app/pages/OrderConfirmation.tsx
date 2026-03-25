@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { CheckCircle2, Download, GraduationCap, BookOpen } from 'lucide-react';
 import { fetchOrderById } from '../services/api';
 import type { Order } from '../types';
+import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 
 export function OrderConfirmation() {
   const { orderId } = useParams();
@@ -87,7 +88,7 @@ export function OrderConfirmation() {
               const Icon = item.product.type === 'course' ? GraduationCap : BookOpen;
               return (
                 <div key={item.product.id} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
-                  <img
+                    <ImageWithFallback
                     src={item.product.image}
                     alt={item.product.title}
                     className="w-20 h-16 object-cover rounded"

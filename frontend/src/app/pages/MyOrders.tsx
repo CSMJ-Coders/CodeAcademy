@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Package, Calendar, DollarSign, Eye } from 'lucide-react';
 import { fetchMyOrders } from '../services/api';
 import type { Order } from '../types';
+import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 
 export function MyOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -199,7 +200,7 @@ export function MyOrders() {
                 <div className="space-y-3">
                   {selectedOrderData.items.map(item => (
                     <div key={item.product.id} className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg">
-                      <img
+                        <ImageWithFallback
                         src={item.product.image}
                         alt={item.product.title}
                         className="w-16 h-12 object-cover rounded"

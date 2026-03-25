@@ -6,6 +6,17 @@ interface ProductCardProps {
   product: Product;
 }
 
+const FALLBACK_PRODUCT_IMAGE =
+  'data:image/svg+xml;utf8,' +
+  encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450">' +
+      '<rect width="800" height="450" fill="#e5e7eb"/>' +
+      '<text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#6b7280" font-family="Arial, sans-serif" font-size="28">' +
+        'Code Academy' +
+      '</text>' +
+    '</svg>'
+  );
+
 export function ProductCard({ product }: ProductCardProps) {
   const Icon = product.type === 'course' ? GraduationCap : BookOpen;
 
@@ -17,9 +28,12 @@ export function ProductCard({ product }: ProductCardProps) {
       {/* Image */}
       <div className="relative aspect-video overflow-hidden bg-gray-100">
         <img
-          src={product.image}
+          src={product.image || FALLBACK_PRODUCT_IMAGE}
           alt={product.title}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).src = FALLBACK_PRODUCT_IMAGE;
+          }}
         />
         {product.isNew && (
           <span className="absolute top-3 left-3 px-2 py-1 bg-green-500 text-white text-xs font-medium rounded">
