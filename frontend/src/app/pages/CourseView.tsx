@@ -1,13 +1,16 @@
 import { useParams, Navigate, Link } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { products } from '../data/mockData';
-import { CheckCircle2, Circle, Lock, Play, ArrowLeft } from 'lucide-react';
-import { useState } from 'react';
+import { CheckCircle2, Circle, Play, ArrowLeft } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { completeCourseChapter, downloadCourseCertificate, fetchCourseProgress } from '../services/api';
 
 export function CourseView() {
   const { id } = useParams();
-  const { purchasedProducts, courseProgress, updateCourseProgress } = useAuth();
+  const { purchasedProducts } = useAuth();
   const [currentChapter, setCurrentChapter] = useState(0);
+  const [completedChapters, setCompletedChapters] = useState<string[]>([]);
+  const [progressPercentage, setProgressPercentage] = useState(0);
 
   const course = products.find(p => p.id === id && p.type === 'course');
 
@@ -20,26 +23,54 @@ export function CourseView() {
     return <Navigate to="/access-denied" />;
   }
 
-  const progress = courseProgress.find(p => p.courseId === course.id);
-  const completedChapters = progress?.completedChapters || [];
+  useEffect(() => {
+    if (!course?.id) return;
+    fetchCourseProgress(course.id)
+      .then((progress) => {
+        setCompletedChapters(progress.completedChapters);
+        setProgressPercentage(progress.progress);
 
-  const handleChapterComplete = () => {
+        if (progress.currentChapter && course.chapters) {
+          const idx = course.chapters.findIndex((chapter) => chapter.id === progress.currentChapter);
+          if (idx >= 0) {
+            setCurrentChapter(idx);
+          }
+        }
+      })
+      .catch(() => {
+        setCompletedChapters([]);
+        setProgressPercentage(0);
+      });
+  }, [course?.id]);
+
+  const handleChapterComplete = async () => {
     if (course.chapters && course.chapters[currentChapter]) {
-      updateCourseProgress(course.id, course.chapters[currentChapter].id);
+      try {
+        const result = await completeCourseChapter(course.id, course.chapters[currentChapter].id);
+        setCompletedChapters(result.completedChapters);
+        setProgressPercentage(result.progress);
+      } catch (error) {
+        alert(error instanceof Error ? error.message : 'No se pudo actualizar el progreso.');
+      }
     }
   };
 
-  const handleNextChapter = () => {
+  const handleNextChapter = async () => {
     if (course.chapters && currentChapter < course.chapters.length - 1) {
-      handleChapterComplete();
+      await handleChapterComplete();
       setCurrentChapter(currentChapter + 1);
     }
   };
 
+  const handleDownloadCertificate = async () => {
+    try {
+      await downloadCourseCertificate(course.id);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'No se pudo descargar el certificado.');
+    }
+  };
+
   const totalChapters = course.chapters?.length || 0;
-  const progressPercentage = totalChapters > 0 
-    ? Math.round((completedChapters.length / totalChapters) * 100) 
-    : 0;
 
   return (
     <div className="min-h-screen pt-16 bg-gray-900">
@@ -105,6 +136,14 @@ export function CourseView() {
                   className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                 >
                   Siguiente Capítulo
+                </button>
+              )}
+              {progressPercentage >= 100 && (
+                <button
+                  onClick={handleDownloadCertificate}
+                  className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                >
+                  Descargar Certificado
                 </button>
               )}
             </div>

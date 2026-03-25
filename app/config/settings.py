@@ -68,6 +68,7 @@ INSTALLED_APPS = [
     'core',                          # Utilidades compartidas (base models, permisos)
     'users',                         # Gestión de usuarios
     'products',                      # Catálogo de cursos y libros
+    'orders',                        # Órdenes de compra y checkout
 ]
 
 
@@ -242,6 +243,17 @@ CORS_ALLOWED_ORIGINS = os.environ.get(
 
 # Permitir que el frontend envíe cookies/tokens en las peticiones
 CORS_ALLOW_CREDENTIALS = True
+
+
+# ============================================
+# Stripe (pasarela de pagos)
+# ============================================
+# En desarrollo usaremos llaves TEST de Stripe.
+# Nunca subir llaves reales a git.
+STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', '')
+STRIPE_PUBLISHABLE_KEY = os.environ.get('STRIPE_PUBLISHABLE_KEY', '')
+STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET', '')
+STRIPE_CURRENCY = os.environ.get('STRIPE_CURRENCY', 'usd')
 
 
 # ============================================

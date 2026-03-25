@@ -14,7 +14,14 @@ Tenemos dos serializers de Product:
 """
 
 from rest_framework import serializers
-from .models import Category, Product, Chapter, TableOfContentsEntry
+from .models import (
+    Category,
+    Product,
+    Chapter,
+    TableOfContentsEntry,
+    BookDownload,
+    CourseProgress,
+)
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -32,14 +39,14 @@ class ChapterSerializer(serializers.ModelSerializer):
     """Convierte un capítulo de curso a JSON."""
     class Meta:
         model = Chapter
-        fields = ['id', 'order', 'title', 'duration', 'video_url']
+        fields = ['id', 'order', 'title', 'duration', 'video_url', 'is_preview']
 
 
 class TableOfContentsEntrySerializer(serializers.ModelSerializer):
     """Convierte una entrada del índice de libro a JSON."""
     class Meta:
         model = TableOfContentsEntry
-        fields = ['order', 'entry']
+        fields = ['order', 'entry', 'is_preview']
 
 
 class ProductListSerializer(serializers.ModelSerializer):
@@ -92,60 +99,60 @@ class ProductDetailSerializer(serializers.ModelSerializer):
         ]
 
 
+class ProductPreviewSerializer(serializers.ModelSerializer):
+    """Preview público: solo contenido marcado como muestra."""
 
-class CategorySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Category
-        fields = ['id', 'name', 'icon']
-
-
-class ChapterSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Chapter
-        fields = ['id', 'order', 'title', 'duration', 'video_url']
-
-
-class TableOfContentsEntrySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = TableOfContentsEntry
-        fields = ['order', 'entry']
-
-
-class ProductListSerializer(serializers.ModelSerializer):
-    """Lightweight serializer for list/catalog views."""
-    category = CategorySerializer(read_only=True)
-    original_price = serializers.DecimalField(
-        max_digits=10, decimal_places=2, allow_null=True, required=False
-    )
+    preview_chapters = serializers.SerializerMethodField()
+    preview_table_of_contents = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
         fields = [
-            'id', 'title', 'type', 'category', 'author',
-            'description', 'price', 'original_price',
-            'level', 'language', 'image', 'rating',
-            'duration', 'pages',
-            'is_new', 'is_featured',
+            'id',
+            'title',
+            'type',
+            'author',
+            'description',
+            'preview_chapters',
+            'preview_table_of_contents',
         ]
 
+    def get_preview_chapters(self, obj):
+        chapters = obj.chapters.filter(is_preview=True).order_by('order')
+        return ChapterSerializer(chapters, many=True).data
 
-class ProductDetailSerializer(serializers.ModelSerializer):
-    """Full serializer for product detail view (includes chapters / TOC)."""
-    category = CategorySerializer(read_only=True)
-    chapters = ChapterSerializer(many=True, read_only=True)
-    table_of_contents = TableOfContentsEntrySerializer(many=True, read_only=True)
-    original_price = serializers.DecimalField(
-        max_digits=10, decimal_places=2, allow_null=True, required=False
-    )
+    def get_preview_table_of_contents(self, obj):
+        toc = obj.table_of_contents.filter(is_preview=True).order_by('order')
+        return TableOfContentsEntrySerializer(toc, many=True).data
+
+
+class BookDownloadPolicySerializer(serializers.ModelSerializer):
+    """Estado de descargas disponibles para un libro comprado."""
+
+    book_id = serializers.IntegerField(source='product_id', read_only=True)
+    downloads_remaining = serializers.SerializerMethodField()
 
     class Meta:
-        model = Product
-        fields = [
-            'id', 'title', 'type', 'category', 'author',
-            'description', 'price', 'original_price',
-            'level', 'language', 'image', 'rating',
-            'duration', 'pages',
-            'is_new', 'is_featured',
-            'chapters', 'table_of_contents',
-            'created_at', 'updated_at',
-        ]
+        model = BookDownload
+        fields = ['book_id', 'download_count', 'max_downloads', 'downloads_remaining', 'last_downloaded_at']
+
+    def get_downloads_remaining(self, obj):
+        return max(obj.max_downloads - obj.download_count, 0)
+
+
+class CourseProgressSerializer(serializers.ModelSerializer):
+    """Respuesta persistente de progreso por curso."""
+
+    course_id = serializers.IntegerField(source='product_id', read_only=True)
+    completed_chapters = serializers.SerializerMethodField()
+    current_chapter = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CourseProgress
+        fields = ['course_id', 'progress_percentage', 'completed_chapters', 'current_chapter', 'updated_at']
+
+    def get_completed_chapters(self, obj):
+        return [str(ch_id) for ch_id in obj.completed_chapters.values_list('id', flat=True)]
+
+    def get_current_chapter(self, obj):
+        return str(obj.current_chapter_id) if obj.current_chapter_id else None

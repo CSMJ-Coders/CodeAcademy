@@ -1,15 +1,49 @@
 import { useParams, Navigate, Link } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
-import { products } from '../data/mockData';
 import { ArrowLeft, Download, BookOpen } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { downloadBookPdf, fetchBookDownloadStatus, fetchProductById } from '../services/api';
+import type { Product } from '../types';
 
 export function BookView() {
   const { id } = useParams();
-  const { purchasedProducts, bookDownloads, downloadBook } = useAuth();
+  const { purchasedProducts } = useAuth();
+  const [book, setBook] = useState<Product | null>(null);
+  const [downloads, setDownloads] = useState<{ downloadsRemaining: number; maxDownloads: number }>({
+    downloadsRemaining: 0,
+    maxDownloads: 0,
+  });
+  const [loading, setLoading] = useState(true);
 
-  const book = products.find(p => p.id === id && p.type === 'book');
+  useEffect(() => {
+    if (!id) return;
 
-  if (!book) {
+    setLoading(true);
+    fetchProductById(id)
+      .then((product) => {
+        if (!product || product.type !== 'book') {
+          setBook(null);
+          return;
+        }
+        setBook(product);
+      })
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  useEffect(() => {
+    if (!id || !purchasedProducts.includes(id)) return;
+    fetchBookDownloadStatus(id)
+      .then(setDownloads)
+      .catch(() => {
+        setDownloads({ downloadsRemaining: 0, maxDownloads: 0 });
+      });
+  }, [id, purchasedProducts]);
+
+  if (loading) {
+    return <div className="min-h-screen pt-20 bg-gray-50" />;
+  }
+
+  if (!book || !id) {
     return <Navigate to="/dashboard/books" />;
   }
 
@@ -18,14 +52,13 @@ export function BookView() {
     return <Navigate to="/access-denied" />;
   }
 
-  const downloads = bookDownloads.find(d => d.bookId === book.id);
-  
-  const handleDownload = () => {
-    const success = downloadBook(book.id);
-    if (success) {
-      alert(`Descargando "${book.title}"...`);
-    } else {
-      alert('Has alcanzado el límite de descargas para este libro.');
+  const handleDownload = async () => {
+    try {
+      await downloadBookPdf(book.id);
+      const status = await fetchBookDownloadStatus(book.id);
+      setDownloads(status);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'No se pudo descargar el libro.');
     }
   };
 
@@ -44,11 +77,11 @@ export function BookView() {
             </Link>
             <div className="flex items-center space-x-4">
               <div className="text-sm text-gray-600">
-                Descargas restantes: {downloads?.downloadsRemaining || 0} / {downloads?.maxDownloads || 0}
+                Descargas restantes: {downloads.downloadsRemaining} / {downloads.maxDownloads}
               </div>
               <button
                 onClick={handleDownload}
-                disabled={!downloads || downloads.downloadsRemaining === 0}
+                disabled={downloads.downloadsRemaining === 0}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Download className="w-4 h-4" />

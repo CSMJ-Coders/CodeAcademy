@@ -1,12 +1,36 @@
 import { useParams, Link } from 'react-router';
-import { useOrders } from '../contexts/OrderContext';
+import { useEffect, useState } from 'react';
 import { CheckCircle2, Download, GraduationCap, BookOpen } from 'lucide-react';
+import { fetchOrderById } from '../services/api';
+import type { Order } from '../types';
 
 export function OrderConfirmation() {
   const { orderId } = useParams();
-  const { orders } = useOrders();
+  const [order, setOrder] = useState<Order | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const order = orders.find(o => o.id === orderId);
+  useEffect(() => {
+    if (!orderId) {
+      setLoading(false);
+      return;
+    }
+
+    fetchOrderById(orderId)
+      .then(setOrder)
+      .catch((error) => {
+        console.error(error);
+        setOrder(null);
+      })
+      .finally(() => setLoading(false));
+  }, [orderId]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen pt-20 flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   if (!order) {
     return (
