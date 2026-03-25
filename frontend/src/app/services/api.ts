@@ -15,6 +15,7 @@
 import type { Product, Category, Order } from '../types';
 
 const ACCESS_TOKEN_KEY = 'code_academy_access_token';
+const REFRESH_TOKEN_KEY = 'code_academy_refresh_token';
 
 // ─── Tipos internos del backend (como llegan del JSON) ──────────────────────
 // Estos tipos reflejan exactamente lo que devuelve Django.
@@ -203,6 +204,67 @@ function getAuthHeaderOnly(): HeadersInit {
   };
 }
 
+async function refreshAccessToken(): Promise<string | null> {
+  const refresh = localStorage.getItem(REFRESH_TOKEN_KEY);
+  if (!refresh) return null;
+
+  try {
+    const response = await fetch('/api/auth/token/refresh/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh }),
+    });
+
+    if (!response.ok) return null;
+    const data = await response.json();
+    if (!data?.access) return null;
+
+    localStorage.setItem(ACCESS_TOKEN_KEY, data.access);
+    if (data.refresh) {
+      localStorage.setItem(REFRESH_TOKEN_KEY, data.refresh);
+    }
+    return data.access;
+  } catch {
+    return null;
+  }
+}
+
+async function fetchWithAuthRetry(
+  url: string,
+  init: RequestInit,
+  requireJsonHeaders = false,
+): Promise<Response> {
+  const access = localStorage.getItem(ACCESS_TOKEN_KEY);
+  if (!access) {
+    throw new Error('No hay sesión activa. Inicia sesión para continuar.');
+  }
+
+  const firstHeaders: HeadersInit = {
+    ...(requireJsonHeaders ? { 'Content-Type': 'application/json' } : {}),
+    ...(init.headers || {}),
+    Authorization: `Bearer ${access}`,
+  };
+
+  let response = await fetch(url, { ...init, headers: firstHeaders });
+  if (response.status !== 401) {
+    return response;
+  }
+
+  const newAccess = await refreshAccessToken();
+  if (!newAccess) {
+    return response;
+  }
+
+  const retryHeaders: HeadersInit = {
+    ...(requireJsonHeaders ? { 'Content-Type': 'application/json' } : {}),
+    ...(init.headers || {}),
+    Authorization: `Bearer ${newAccess}`,
+  };
+
+  response = await fetch(url, { ...init, headers: retryHeaders });
+  return response;
+}
+
 // ─── Parámetros de filtro para /api/products/ ────────────────────────────────
 
 export interface ProductFilters {
@@ -297,9 +359,7 @@ export async function fetchProductPreviewById(id: string): Promise<Product | nul
 }
 
 export async function fetchBookDownloadStatus(bookId: string): Promise<{ downloadsRemaining: number; maxDownloads: number }> {
-  const res = await fetch(`/api/books/${bookId}/downloads/status/`, {
-    headers: getAuthHeaderOnly(),
-  });
+  const res = await fetchWithAuthRetry(`/api/books/${bookId}/downloads/status/`, { method: 'GET' });
 
   if (!res.ok) {
     throw new Error('No se pudo consultar el estado de descargas del libro.');
@@ -313,9 +373,7 @@ export async function fetchBookDownloadStatus(bookId: string): Promise<{ downloa
 }
 
 export async function downloadBookPdf(bookId: string): Promise<void> {
-  const res = await fetch(`/api/books/${bookId}/download/`, {
-    headers: getAuthHeaderOnly(),
-  });
+  const res = await fetchWithAuthRetry(`/api/books/${bookId}/download/`, { method: 'GET' });
 
   if (!res.ok) {
     let message = 'No se pudo descargar el libro.';
@@ -344,9 +402,7 @@ export async function downloadBookPdf(bookId: string): Promise<void> {
 }
 
 export async function fetchCourseProgress(courseId: string): Promise<{ progress: number; completedChapters: string[]; currentChapter?: string }> {
-  const res = await fetch(`/api/courses/${courseId}/progress/`, {
-    headers: getAuthHeaderOnly(),
-  });
+  const res = await fetchWithAuthRetry(`/api/courses/${courseId}/progress/`, { method: 'GET' });
 
   if (!res.ok) {
     throw new Error('No se pudo cargar el progreso del curso.');
@@ -361,11 +417,10 @@ export async function fetchCourseProgress(courseId: string): Promise<{ progress:
 }
 
 export async function completeCourseChapter(courseId: string, chapterId: string): Promise<{ progress: number; completedChapters: string[]; certificateIssued: boolean }> {
-  const res = await fetch(`/api/courses/${courseId}/progress/complete/`, {
+  const res = await fetchWithAuthRetry(`/api/courses/${courseId}/progress/complete/`, {
     method: 'POST',
-    headers: getAuthHeaders(),
     body: JSON.stringify({ chapter_id: Number(chapterId) }),
-  });
+  }, true);
 
   if (!res.ok) {
     throw new Error('No se pudo actualizar el progreso del curso.');
@@ -380,9 +435,7 @@ export async function completeCourseChapter(courseId: string, chapterId: string)
 }
 
 export async function downloadCourseCertificate(courseId: string): Promise<void> {
-  const res = await fetch(`/api/courses/${courseId}/certificate/`, {
-    headers: getAuthHeaderOnly(),
-  });
+  const res = await fetchWithAuthRetry(`/api/courses/${courseId}/certificate/`, { method: 'GET' });
 
   if (!res.ok) {
     let message = 'No se pudo descargar el certificado.';
@@ -412,11 +465,10 @@ export async function downloadCourseCertificate(courseId: string): Promise<void>
 
 export async function createOrder(orderItems: Array<{ product_id: number; quantity: number }>): Promise<Order> {
   // Flujo sandbox (sin pasarela real). Se mantiene para pruebas internas.
-  const res = await fetch('/api/orders/', {
+  const res = await fetchWithAuthRetry('/api/orders/', {
     method: 'POST',
-    headers: getAuthHeaders(),
     body: JSON.stringify({ items: orderItems }),
-  });
+  }, true);
 
   if (!res.ok) {
     throw new Error('No se pudo crear la orden. Verifica tu carrito e intenta nuevamente.');
@@ -430,14 +482,25 @@ export async function createStripePaymentIntent(
   orderItems: Array<{ product_id: number; quantity: number }>
 ): Promise<{ clientSecret: string; publishableKey: string; order: Order }> {
   // Flujo real: crea una orden pending y un PaymentIntent en Stripe.
-  const res = await fetch('/api/orders/create-intent/', {
+  const res = await fetchWithAuthRetry('/api/orders/create-intent/', {
     method: 'POST',
-    headers: getAuthHeaders(),
     body: JSON.stringify({ items: orderItems }),
-  });
+  }, true);
 
   if (!res.ok) {
-    throw new Error('No se pudo iniciar el pago con Stripe.');
+    let message = 'No se pudo iniciar el pago con Stripe.';
+    try {
+      const data = await res.json();
+      if (typeof data?.detail === 'string') {
+        message = data.detail;
+      }
+      if (typeof data?.non_field_errors?.[0] === 'string') {
+        message = data.non_field_errors[0];
+      }
+    } catch {
+      // ignore
+    }
+    throw new Error(message);
   }
 
   const data: CreateStripeIntentResponse = await res.json();
@@ -450,9 +513,8 @@ export async function createStripePaymentIntent(
 
 export async function confirmStripeOrderPayment(orderId: string): Promise<Order> {
   // Confirmación síncrona contra Stripe para reflejar estado al usuario.
-  const res = await fetch(`/api/orders/${orderId}/confirm/`, {
+  const res = await fetchWithAuthRetry(`/api/orders/${orderId}/confirm/`, {
     method: 'POST',
-    headers: getAuthHeaders(),
   });
 
   if (!res.ok) {
@@ -465,9 +527,7 @@ export async function confirmStripeOrderPayment(orderId: string): Promise<Order>
 
 export async function fetchMyOrders(): Promise<Order[]> {
   // Historial paginado de órdenes del usuario autenticado.
-  const res = await fetch('/api/orders/', {
-    headers: getAuthHeaders(),
-  });
+  const res = await fetchWithAuthRetry('/api/orders/', { method: 'GET' });
 
   if (!res.ok) {
     throw new Error('No se pudieron cargar tus órdenes.');
@@ -479,9 +539,7 @@ export async function fetchMyOrders(): Promise<Order[]> {
 
 export async function fetchOrderById(orderId: string): Promise<Order | null> {
   // Detalle de una orden específica (en pantalla de confirmación, por ejemplo).
-  const res = await fetch(`/api/orders/${orderId}/`, {
-    headers: getAuthHeaders(),
-  });
+  const res = await fetchWithAuthRetry(`/api/orders/${orderId}/`, { method: 'GET' });
 
   if (res.status === 404) return null;
   if (!res.ok) {
