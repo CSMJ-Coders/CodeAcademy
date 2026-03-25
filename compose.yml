@@ -38,5 +38,22 @@ services:
     volumes:
       - .:/code
 
+  # --- Frontend React (Vite) ---
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: dockerfile
+    ports:
+      - "5173:5173"
+    depends_on:
+      - web
+    environment:
+      # Proxy interno de Vite hacia el backend dentro de la red de Docker.
+      VITE_PROXY_TARGET: http://web:8000
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+
 volumes:
   pgdata:
+  frontend_node_modules:

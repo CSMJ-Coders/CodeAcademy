@@ -8,6 +8,22 @@ Seguir la guía completa del repositorio raíz:
 
 - [README.md](../README.md)
 
+## Ejecutar en Docker (requisito full stack)
+
+Desde la raíz del proyecto:
+
+```bash
+docker compose up -d --build frontend
+```
+
+El frontend queda disponible en `http://localhost:5173`.
+
+Logs:
+
+```bash
+docker compose logs -f frontend
+```
+
 ## Quick start (solo frontend)
 
 ```bash

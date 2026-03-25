@@ -86,7 +86,7 @@ Debe coincidir con la llave pública test del backend.
 
 ---
 
-## 5) Levantar backend y base de datos
+## 5) Levantar proyecto completo en Docker (recomendado)
 
 Desde raíz:
 
@@ -94,6 +94,12 @@ Desde raíz:
 docker compose up -d --build
 docker compose exec web python manage.py migrate
 ```
+
+Esto levanta:
+
+- `db` (PostgreSQL)
+- `web` (Django API)
+- `frontend` (React + Vite)
 
 Opcional admin:
 
@@ -103,13 +109,21 @@ docker compose exec web python manage.py createsuperuser
 
 ---
 
-## 6) Levantar frontend
+## 6) Frontend en Docker vs local
+
+### Opción A (requisito full Docker)
+
+No necesitas correr `npm run dev` localmente. El frontend ya corre en el servicio `frontend`.
+
+### Opción B (solo desarrollo frontend local)
 
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
+
+Si usas esta opción, asegúrate de tener backend en Docker (`web` + `db`) levantado.
 
 ---
 
@@ -181,6 +195,9 @@ docker compose exec web python manage.py shell
 Frontend:
 
 ```bash
+docker compose logs -f frontend
+
+# Opcional (si corres frontend local)
 cd frontend
 npm run dev
 npm run build
@@ -205,7 +222,13 @@ docker compose up -d
 ### Stripe no inicializa en frontend
 
 - Revisar `frontend/.env` (`VITE_STRIPE_PUBLISHABLE_KEY`).
-- Reiniciar `npm run dev` tras cambiar variables.
+- Si frontend corre en Docker, reiniciar servicio:
+
+```bash
+docker compose restart frontend
+```
+
+- Si frontend corre local, reiniciar `npm run dev`.
 
 ### Webhook no actualiza estado de pago
 
@@ -229,6 +252,10 @@ docker compose exec web python manage.py migrate
 Si hubo cambios en frontend:
 
 ```bash
+# Si frontend corre en Docker
+docker compose up -d --build frontend
+
+# Si frontend corre local
 cd frontend
 npm install
 npm run dev

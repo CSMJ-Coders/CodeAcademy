@@ -3,6 +3,8 @@ import path from 'path'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 
+const proxyTarget = process.env.VITE_PROXY_TARGET || 'http://localhost:8000'
+
 export default defineConfig({
   plugins: [
     // The React and Tailwind plugins are both required for Make, even if
@@ -23,14 +25,15 @@ export default defineConfig({
   // Sin esto, React no podría comunicarse con Django porque
   // están en puertos diferentes (5173 vs 8000).
   server: {
+    host: true,
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',
+        target: proxyTarget,
         changeOrigin: true,
       },
       '/media': {
-        target: 'http://localhost:8000',
+        target: proxyTarget,
         changeOrigin: true,
       },
     },
