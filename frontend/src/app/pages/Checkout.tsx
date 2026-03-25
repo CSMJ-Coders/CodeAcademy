@@ -211,7 +211,7 @@ export function Checkout() {
           <div className="md:col-span-1">
             <div className="bg-white rounded-lg border border-gray-200 p-6 sticky top-24">
               <h2 className="font-semibold text-gray-900 mb-4">Total de la Orden</h2>
-              
+
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between text-gray-600">
                   <span>Subtotal</span>
