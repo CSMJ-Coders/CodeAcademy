@@ -1,153 +1,223 @@
-# 📘 Code Academy
+# Code Academy
 
-**Plataforma Global de eCommerce de Cursos y Libros de Programación**
+Plataforma eCommerce para cursos y libros de programación.
 
-Aplicación web especializada en la venta de cursos digitales y eBooks técnicos de programación, desarrollada con Django + PostgreSQL + React.
+## Stack
 
----
-
-## 🛠️ Tech Stack
-
-| Capa | Tecnología |
-|---|---|
-| Backend | Django 4.2 + Django REST Framework |
-| Base de Datos | PostgreSQL 16 |
-| Autenticación | JWT (Simple JWT) |
-| Frontend | React 18 + TypeScript + Vite + TailwindCSS |
-| Contenedorización | Docker + Docker Compose |
+- Backend: Django + DRF + PostgreSQL
+- Frontend: React + TypeScript + Vite
+- Auth: JWT
+- Pagos: Stripe (test mode)
+- Infra local: Docker Compose
 
 ---
 
-## 📋 Requisitos Previos
+## 1) Requisitos previos
 
-Antes de empezar, asegúrate de tener instalado:
+Instalar:
 
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (incluye Docker Compose)
-- [Node.js](https://nodejs.org/) (v18 o superior)
-- [Git](https://git-scm.com/)
+- Docker Desktop
+- Node.js 18+
+- npm 9+
+- Git
+- (Opcional) Stripe CLI para webhooks locales
 
-Para verificar que todo está instalado:
+Verificar:
 
 ```bash
-docker --version        # Docker version 24+ 
-node --version          # v18+
-npm --version           # 9+
-git --version           # git version 2+
+docker --version
+docker compose version
+node --version
+npm --version
+git --version
 ```
 
 ---
 
-## 🚀 Configuración Inicial (Primera vez)
-
-### 1. Clonar el repositorio
+## 2) Clonar y abrir proyecto
 
 ```bash
-git clone https://github.com/Digital-Courses/CodeAcademy.git
+git clone <URL_DEL_REPO>
 cd CodeAcademy
 ```
 
-### 2. Cambiar a la rama de desarrollo
+Si trabajarás una rama específica:
 
 ```bash
-git checkout develop
+git checkout <tu-rama>
 ```
 
-### 3. Crear el archivo de variables de entorno
+---
+
+## 3) Variables de entorno (backend)
+
+Crear `.env` desde plantilla:
 
 ```bash
 cp .env.example .env
 ```
 
-> ⚠️ **IMPORTANTE:** El archivo `.env` contiene contraseñas y claves secretas. **NUNCA** lo subas a Git (ya está en `.gitignore`).
+Editar `.env` y completar **obligatoriamente** Stripe:
 
-Para desarrollo local, los valores por defecto del `.env.example` funcionan sin cambios.
+- `STRIPE_SECRET_KEY=sk_test_...`
+- `STRIPE_PUBLISHABLE_KEY=pk_test_...`
+- `STRIPE_WEBHOOK_SECRET=whsec_...` (si usarás webhook firmado)
+- `STRIPE_CURRENCY=usd`
 
-### 4. Levantar el Backend (Django + PostgreSQL)
+Las variables de DB/CORS ya tienen valores de desarrollo por defecto.
+
+> Nunca subir `.env` a Git.
+
+---
+
+## 4) Variables de entorno (frontend)
+
+Crear archivo de frontend:
 
 ```bash
-docker compose up -d
+cp frontend/.env.example frontend/.env
 ```
 
-Esto levanta 2 servicios:
-- **db** → PostgreSQL en el puerto `5433`
-- **web** → Django en el puerto `8000`
+Validar que tenga:
 
-### 5. Aplicar migraciones de base de datos
+- `VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...`
+
+Debe coincidir con la llave pública test del backend.
+
+---
+
+## 5) Levantar backend y base de datos
+
+Desde raíz:
 
 ```bash
+docker compose up -d --build
 docker compose exec web python manage.py migrate
 ```
 
-### 6. Crear un usuario administrador (opcional)
+Opcional admin:
 
 ```bash
 docker compose exec web python manage.py createsuperuser
 ```
 
-### 7. Instalar dependencias del Frontend
+---
+
+## 6) Levantar frontend
 
 ```bash
 cd frontend
 npm install
-```
-
-### 8. Levantar el Frontend (React)
-
-```bash
 npm run dev
 ```
 
 ---
 
-## ✅ Verificar que todo funciona
+## 7) URLs de verificación
 
-| Servicio | URL | Qué deberías ver |
-|---|---|---|
-| Frontend React | http://localhost:5173 | La aplicación web completa |
-| API Django | http://localhost:8000/api/test/ | `{"message": "API funcionando correctamente 🚀"}` |
-| Admin Django | http://localhost:8000/admin/ | Panel de administración (usa el superuser) |
+- Frontend: http://localhost:5173
+- API test: http://localhost:8000/api/test/
+- Django Admin: http://localhost:8000/admin/
 
 ---
 
-## 📦 Comandos del Día a Día
+## 8) Configurar webhook de Stripe (recomendado para pruebas reales)
 
-### Levantar el proyecto
+En otra terminal:
 
 ```bash
-# Terminal 1 - Backend
+stripe login
+stripe listen --forward-to localhost:8000/api/orders/webhook/stripe/
+```
+
+Copiar el `whsec_...` que muestra Stripe CLI y colocarlo en `.env` (`STRIPE_WEBHOOK_SECRET`).
+
+Luego reiniciar backend:
+
+```bash
+docker compose restart web
+```
+
+---
+
+## 9) Flujo de prueba completo (compra + acceso)
+
+1. Registrar/login en frontend.
+2. Comprar producto en checkout con tarjeta test:
+   - `4242 4242 4242 4242`
+   - fecha futura, CVC cualquiera.
+3. Confirmar orden en “Mis Órdenes”.
+4. Verificar acceso a producto comprado.
+5. Libros: probar descarga protegida (máximo 3 descargas).
+6. Cursos: completar capítulos, llegar a 100% y descargar certificado PDF.
+
+---
+
+## 10) Comandos útiles
+
+Levantar/parar:
+
+```bash
 docker compose up -d
-
-# Terminal 2 - Frontend (desde /frontend)
-npm run dev
-```
-
-### Detener el proyecto
-
-```bash
-# Backend
 docker compose down
-
-# Frontend
-Ctrl + C en la terminal donde corre npm run dev
 ```
 
-### Ver logs del backend
+Logs:
 
 ```bash
-docker compose logs -f web        # Logs de Django en tiempo real
-docker compose logs -f db         # Logs de PostgreSQL
+docker compose logs -f web
+docker compose logs -f db
 ```
 
-### Comandos de Django (dentro del contenedor)
+Django (contenedor):
 
 ```bash
-docker compose exec web python manage.py migrate              # Aplicar migraciones
-docker compose exec web python manage.py makemigrations        # Generar migraciones
-docker compose exec web python manage.py createsuperuser       # Crear admin
-docker compose exec web python manage.py shell                 # Consola interactiva de Django
+docker compose exec web python manage.py makemigrations
+docker compose exec web python manage.py migrate
+docker compose exec web python manage.py test
+docker compose exec web python manage.py shell
 ```
 
-### Reconstruir después de cambios en requirements.txt
+Frontend:
+
+```bash
+cd frontend
+npm run dev
+npm run build
+```
+
+---
+
+## 11) Troubleshooting rápido
+
+### Error: `No module named 'reportlab'`
+
+```bash
+docker compose build --no-cache web
+docker compose up -d
+```
+
+### Error checkout 401 / sesión expirada
+
+- Cerrar sesión y volver a iniciar.
+- Verificar `code_academy_access_token` y `code_academy_refresh_token` en navegador.
+
+### Stripe no inicializa en frontend
+
+- Revisar `frontend/.env` (`VITE_STRIPE_PUBLISHABLE_KEY`).
+- Reiniciar `npm run dev` tras cambiar variables.
+
+### Webhook no actualiza estado de pago
+
+- Confirmar `stripe listen` activo.
+- Confirmar `STRIPE_WEBHOOK_SECRET` correcto.
+- Revisar `docker compose logs -f web`.
+
+---
+
+## 12) Notas para quien hace pull por primera vez
+
+Si haces pull y hubo cambios en `requirements.txt` o `dockerfile`, reconstruye:
 
 ```bash
 docker compose down
@@ -156,104 +226,11 @@ docker compose up -d
 docker compose exec web python manage.py migrate
 ```
 
----
-
-## 📁 Estructura del Proyecto
-
-```
-CodeAcademy/
-├── .env.example          # Plantilla de variables de entorno
-├── .gitignore            # Archivos ignorados por Git
-├── compose.yml           # Docker Compose (orquesta backend + DB)
-├── dockerfile            # Imagen Docker del backend
-├── requirements.txt      # Dependencias Python
-│
-├── app/                  # 🐍 Backend Django
-│   ├── manage.py         # CLI de Django
-│   ├── config/           # Configuración del proyecto
-│   │   ├── settings.py   # Settings principal
-│   │   ├── urls.py       # Rutas raíz
-│   │   ├── wsgi.py       # Entry point producción
-│   │   └── asgi.py       # Entry point async
-│   ├── core/             # Utilidades compartidas
-│   │   ├── models.py     # TimeStampedModel (modelo base)
-│   │   └── permissions.py# Permisos personalizados
-│   └── users/            # App de usuarios
-│       ├── models.py     # Modelo User personalizado
-│       ├── views.py      # Endpoints de la API
-│       └── urls.py       # Rutas de users
-│
-└── frontend/             # ⚛️ Frontend React
-    ├── package.json      # Dependencias Node.js
-    ├── vite.config.ts    # Config de Vite + proxy a Django
-    ├── tsconfig.json     # Config de TypeScript
-    └── src/
-        ├── main.tsx      # Entry point de React
-        └── app/
-            ├── routes.ts       # Rutas de la aplicación
-            ├── types.ts        # Tipos TypeScript
-            ├── components/     # Componentes reutilizables
-            ├── contexts/       # Estado global (Auth, Cart, Orders)
-            ├── data/           # Datos mock (temporal)
-            └── pages/          # Páginas de la aplicación
-```
-
----
-
-## 🌿 Git Workflow
-
-Usamos **Git Flow** simplificado:
-
-```
-main      →  Código estable y probado (producción)
-develop   →  Rama de desarrollo (integración)
-feature/* →  Ramas para nuevas funcionalidades
-```
-
-### Para trabajar en una nueva feature:
+Si hubo cambios en frontend:
 
 ```bash
-# 1. Asegúrate de estar en develop actualizado
-git checkout develop
-git pull origin develop
-
-# 2. Crea tu rama de feature
-git checkout -b feature/nombre-de-tu-feature
-
-# 3. Trabaja y haz commits
-git add .
-git commit -m "feat(modulo): descripción del cambio"
-
-# 4. Sube tu rama
-git push origin feature/nombre-de-tu-feature
-
-# 5. Crea un Pull Request en GitHub: feature/* → develop
+cd frontend
+npm install
+npm run dev
 ```
 
-### Formato de commits (Conventional Commits):
-
-```
-feat(users): add registration endpoint       # Nueva funcionalidad
-fix(cart): fix total calculation              # Corrección de bug
-chore(docker): update compose healthcheck     # Tarea de mantenimiento
-docs(readme): add setup instructions          # Documentación
-refactor(products): simplify filter logic     # Reorganizar código
-test(orders): add payment flow tests          # Agregar tests
-```
-
----
-
-## 🔑 Variables de Entorno
-
-| Variable | Descripción | Valor por defecto (dev) |
-|---|---|---|
-| `DJANGO_SECRET_KEY` | Clave secreta de Django | `dev-secret-key-change-in-production` |
-| `DJANGO_DEBUG` | Modo debug | `True` |
-| `DB_NAME` | Nombre de la base de datos | `digital_store` |
-| `DB_USER` | Usuario de PostgreSQL | `digital_user` |
-| `DB_PASSWORD` | Contraseña de PostgreSQL | `digital_pass` |
-| `DB_HOST` | Host de la base de datos | `db` |
-| `DB_PORT` | Puerto de PostgreSQL | `5432` |
-| `CORS_ALLOWED_ORIGINS` | Orígenes permitidos para CORS | `http://localhost:5173` |
-
----

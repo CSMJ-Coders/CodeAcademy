@@ -1,11 +1,23 @@
+# Frontend - Code Academy
 
-  # Code Academy eCommerce Platform
+Este frontend depende del backend Django y de variables de entorno de Stripe.
 
-  This is a code bundle for Code Academy eCommerce Platform. The original project is available at https://www.figma.com/design/SIRbW5hbTYNXigelEAZVmM/Code-Academy-eCommerce-Platform.
+## Setup recomendado
 
-  ## Running the code
+Seguir la guía completa del repositorio raíz:
 
-  Run `npm i` to install the dependencies.
+- [README.md](../README.md)
 
-  Run `npm run dev` to start the development server.
-  
+## Quick start (solo frontend)
+
+```bash
+cp .env.example .env
+npm install
+npm run dev
+```
+
+## Variable obligatoria
+
+`VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...`
+
+Si cambias `.env`, reinicia `npm run dev`.
