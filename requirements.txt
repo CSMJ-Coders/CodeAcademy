@@ -21,3 +21,4 @@ python-dotenv==1.0.*                 # Lee variables del archivo .env
 Pillow                               # Procesamiento de imágenes (para las portadas de productos)
 stripe                               # Pasarela de pagos (modo test/live)
 reportlab                            # Generación de certificados PDF
+requests                             # Cliente HTTP para notificaciones webhook

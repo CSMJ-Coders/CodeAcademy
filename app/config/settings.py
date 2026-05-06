@@ -8,7 +8,9 @@ Las variables sensibles se leen del archivo .env (nunca hardcodeadas).
 from pathlib import Path
 from datetime import timedelta
 import os
+
 from dotenv import load_dotenv
+from django.utils.translation import gettext_lazy as _
 
 # ============================================
 # Cargar variables de entorno desde .env
@@ -16,7 +18,9 @@ from dotenv import load_dotenv
 # load_dotenv() busca el archivo .env en el directorio raíz del proyecto
 # y carga las variables para que os.environ.get() las encuentre.
 # Así separamos los SECRETOS del CÓDIGO.
-load_dotenv(os.path.join(Path(__file__).resolve().parent.parent.parent, '.env'))
+load_dotenv(
+    os.path.join(Path(__file__).resolve().parent.parent.parent, ".env"), override=True
+)
 
 # BASE_DIR = la carpeta raíz de la app Django (donde está manage.py)
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -28,24 +32,28 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECRET_KEY: Django la usa para firmar cookies, tokens, etc.
 # Si alguien la obtiene, puede falsificar sesiones de usuario.
 # Por eso NUNCA la escribimos directo en el código.
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'fallback-dev-key')
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "fallback-dev-key")
 
 # DEBUG=True muestra errores detallados en el navegador.
 # En PRODUCCIÓN debe ser False (nunca mostrar errores internos al usuario).
-DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() in ('true', '1', 'yes')
+DEBUG = os.environ.get("DJANGO_DEBUG", "True").lower() in ("true", "1", "yes")
 
 # ALLOWED_HOSTS: qué dominios pueden acceder a Django.
 # En desarrollo: localhost. En producción: tu-dominio.com
-_allowed_hosts_env = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1')
-ALLOWED_HOSTS = [host.strip() for host in _allowed_hosts_env.split(',') if host.strip()]
+_allowed_hosts_env = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1")
+ALLOWED_HOSTS = [host.strip() for host in _allowed_hosts_env.split(",") if host.strip()]
 # Hosts necesarios cuando Django recibe tráfico por proxy en Docker (Vite -> web:8000)
-for required_host in ['localhost', '127.0.0.1', 'web']:
+for required_host in ["localhost", "127.0.0.1", "web"]:
     if required_host not in ALLOWED_HOSTS:
         ALLOWED_HOSTS.append(required_host)
 
 # USE_SQLITE_FOR_LOCAL: fallback opcional para correr tests o validar localmente
 # cuando Docker/PostgreSQL no está disponible.
-USE_SQLITE_FOR_LOCAL = os.environ.get('USE_SQLITE_FOR_LOCAL', 'False').lower() in ('true', '1', 'yes')
+USE_SQLITE_FOR_LOCAL = os.environ.get("USE_SQLITE_FOR_LOCAL", "False").lower() in (
+    "true",
+    "1",
+    "yes",
+)
 
 
 # ============================================
@@ -55,25 +63,23 @@ USE_SQLITE_FOR_LOCAL = os.environ.get('USE_SQLITE_FOR_LOCAL', 'False').lower() i
 # Las primeras 6 son de Django. Las demás son nuestras o de terceros.
 INSTALLED_APPS = [
     # --- Apps de Django (vienen incluidas) ---
-    'django.contrib.admin',          # Panel de administración
-    'django.contrib.auth',           # Sistema de autenticación (login, permisos)
-    'django.contrib.contenttypes',   # Framework de tipos de contenido
-    'django.contrib.sessions',       # Manejo de sesiones de usuario
-    'django.contrib.messages',       # Mensajes flash (notificaciones)
-    'django.contrib.staticfiles',    # Archivos estáticos (CSS, JS, imágenes)
-
+    "django.contrib.admin",  # Panel de administración
+    "django.contrib.auth",  # Sistema de autenticación (login, permisos)
+    "django.contrib.contenttypes",  # Framework de tipos de contenido
+    "django.contrib.sessions",  # Manejo de sesiones de usuario
+    "django.contrib.messages",  # Mensajes flash (notificaciones)
+    "django.contrib.staticfiles",  # Archivos estáticos (CSS, JS, imágenes)
     # --- Apps de Terceros ---
-    'rest_framework',                # Django REST Framework: para crear APIs
-    'corsheaders',                   # CORS: permite que React hable con Django
-    'rest_framework_simplejwt',      # JWT: autenticación con tokens
-    'rest_framework_simplejwt.token_blacklist',  # Blacklist de tokens (logout)
-    'django_filters',                # Filtros avanzados para APIs
-
+    "rest_framework",  # Django REST Framework: para crear APIs
+    "corsheaders",  # CORS: permite que React hable con Django
+    "rest_framework_simplejwt",  # JWT: autenticación con tokens
+    "rest_framework_simplejwt.token_blacklist",  # Blacklist de tokens (logout)
+    "django_filters",  # Filtros avanzados para APIs
     # --- Nuestras Apps ---
-    'core',                          # Utilidades compartidas (base models, permisos)
-    'users',                         # Gestión de usuarios
-    'products',                      # Catálogo de cursos y libros
-    'orders',                        # Órdenes de compra y checkout
+    "core",  # Utilidades compartidas (base models, permisos)
+    "users",  # Gestión de usuarios
+    "products",  # Catálogo de cursos y libros
+    "orders",  # Órdenes de compra y checkout
 ]
 
 
@@ -87,35 +93,36 @@ INSTALLED_APPS = [
 # IMPORTANTE: corsheaders DEBE ir lo más arriba posible
 # para que procese los headers CORS antes que cualquier otra cosa.
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',            # ← CORS primero
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "corsheaders.middleware.CorsMiddleware",  # ← CORS primero
+    "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.locale.LocaleMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = 'config.urls'
+ROOT_URLCONF = "config.urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = 'config.wsgi.application'
+WSGI_APPLICATION = "config.wsgi.application"
 
 
 # ============================================
@@ -125,20 +132,20 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Pero dejamos un fallback opcional a SQLite para validación rápida local/tests.
 if USE_SQLITE_FOR_LOCAL:
     DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
         }
     }
 else:
     DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.environ.get('DB_NAME', 'digital_store'),
-            'USER': os.environ.get('DB_USER', 'digital_user'),
-            'PASSWORD': os.environ.get('DB_PASSWORD', 'digital_pass'),
-            'HOST': os.environ.get('DB_HOST', 'db'),
-            'PORT': os.environ.get('DB_PORT', '5432'),
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.environ.get("DB_NAME", "digital_store"),
+            "USER": os.environ.get("DB_USER", "digital_user"),
+            "PASSWORD": os.environ.get("DB_PASSWORD", "digital_pass"),
+            "HOST": os.environ.get("DB_HOST", "db"),
+            "PORT": os.environ.get("DB_PORT", "5432"),
         }
     }
 
@@ -148,27 +155,34 @@ else:
 # ============================================
 # Django valida automáticamente que las contraseñas sean seguras.
 AUTH_PASSWORD_VALIDATORS = [
-    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
+    },
+    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
+    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
 
 # ============================================
 # Internacionalización
 # ============================================
-LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'UTC'
-USE_I18N = True      # Soporte para traducciones
-USE_TZ = True        # Usar timezone-aware datetimes
+LANGUAGE_CODE = "es"
+LANGUAGES = [
+    ("es", _("Español")),
+    ("en", _("English")),
+]
+LOCALE_PATHS = [BASE_DIR / "locale"]
+TIME_ZONE = "UTC"
+USE_I18N = True  # Soporte para traducciones
+USE_TZ = True  # Usar timezone-aware datetimes
 
 
 # ============================================
 # Archivos Estáticos (CSS, JS, imágenes del sitio)
 # ============================================
-STATIC_URL = 'static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 
 # ============================================
@@ -180,8 +194,8 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 #
 # IMPORTANTE: En producción, los archivos de libros NO se servirán
 # por URL directa. Se servirán a través de Django verificando permisos.
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
 
 
 # ============================================
@@ -189,7 +203,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # ============================================
 # Le decimos a Django: "no uses el User por defecto,
 # usa NUESTRO modelo User de la app 'users'"
-AUTH_USER_MODEL = 'users.User'
+AUTH_USER_MODEL = "users.User"
 
 
 # ============================================
@@ -198,23 +212,21 @@ AUTH_USER_MODEL = 'users.User'
 # Configuración global de la API.
 REST_FRAMEWORK = {
     # Autenticación: usamos JWT (tokens) como método principal
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
     # Permisos: por defecto, cualquiera puede acceder (AllowAny).
     # En cada View podemos restringir individualmente.
-    'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.AllowAny',
-    ),
+    "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.AllowAny",),
     # Filtros: DjangoFilterBackend activo globalmente
-    'DEFAULT_FILTER_BACKENDS': [
-        'django_filters.rest_framework.DjangoFilterBackend',
-        'rest_framework.filters.SearchFilter',
-        'rest_framework.filters.OrderingFilter',
+    "DEFAULT_FILTER_BACKENDS": [
+        "django_filters.rest_framework.DjangoFilterBackend",
+        "rest_framework.filters.SearchFilter",
+        "rest_framework.filters.OrderingFilter",
     ],
     # Paginación: máximo 20 resultados por página
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 20,
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 20,
 }
 
 
@@ -226,11 +238,13 @@ REST_FRAMEWORK = {
 # REFRESH token: dura más (7 días) → sirve para obtener un nuevo ACCESS token
 #   sin tener que hacer login de nuevo.
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
-    'ROTATE_REFRESH_TOKENS': True,         # Cada vez que se refresca, se da un nuevo refresh token
-    'BLACKLIST_AFTER_ROTATION': True,       # El refresh token viejo se invalida
-    'AUTH_HEADER_TYPES': ('Bearer',),       # El frontend envía: "Authorization: Bearer <token>"
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ROTATE_REFRESH_TOKENS": True,  # Cada vez que se refresca, se da un nuevo refresh token
+    "BLACKLIST_AFTER_ROTATION": True,  # El refresh token viejo se invalida
+    "AUTH_HEADER_TYPES": (
+        "Bearer",
+    ),  # El frontend envía: "Authorization: Bearer <token>"
 }
 
 
@@ -242,9 +256,8 @@ SIMPLE_JWT = {
 # Son dominios DIFERENTES → el navegador bloquea.
 # CORS le dice al navegador: "está bien, este origen está permitido".
 CORS_ALLOWED_ORIGINS = os.environ.get(
-    'CORS_ALLOWED_ORIGINS',
-    'http://localhost:5173,http://127.0.0.1:5173'
-).split(',')
+    "CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
+).split(",")
 
 # Permitir que el frontend envíe cookies/tokens en las peticiones
 CORS_ALLOW_CREDENTIALS = True
@@ -255,13 +268,13 @@ CORS_ALLOW_CREDENTIALS = True
 # ============================================
 # En desarrollo usaremos llaves TEST de Stripe.
 # Nunca subir llaves reales a git.
-STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', '')
-STRIPE_PUBLISHABLE_KEY = os.environ.get('STRIPE_PUBLISHABLE_KEY', '')
-STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET', '')
-STRIPE_CURRENCY = os.environ.get('STRIPE_CURRENCY', 'usd')
+STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
+STRIPE_PUBLISHABLE_KEY = os.environ.get("STRIPE_PUBLISHABLE_KEY", "")
+STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
+STRIPE_CURRENCY = os.environ.get("STRIPE_CURRENCY", "usd")
 
 
 # ============================================
 # Default Primary Key
 # ============================================
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
