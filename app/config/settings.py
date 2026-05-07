@@ -8,6 +8,7 @@ Las variables sensibles se leen del archivo .env (nunca hardcodeadas).
 from pathlib import Path
 from datetime import timedelta
 import os
+import sys
 
 from dotenv import load_dotenv
 from django.utils.translation import gettext_lazy as _
@@ -54,6 +55,7 @@ USE_SQLITE_FOR_LOCAL = os.environ.get("USE_SQLITE_FOR_LOCAL", "False").lower() i
     "1",
     "yes",
 )
+RUNNING_TESTS = any(arg == "test" or arg.startswith("test ") for arg in sys.argv[1:])
 
 
 # ============================================
@@ -130,7 +132,7 @@ WSGI_APPLICATION = "config.wsgi.application"
 # ============================================
 # Usamos PostgreSQL como base principal del proyecto.
 # Pero dejamos un fallback opcional a SQLite para validación rápida local/tests.
-if USE_SQLITE_FOR_LOCAL:
+if USE_SQLITE_FOR_LOCAL or RUNNING_TESTS:
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
