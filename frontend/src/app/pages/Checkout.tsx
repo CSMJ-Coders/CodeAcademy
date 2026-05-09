@@ -1,15 +1,21 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, Navigate } from 'react-router';
 import { CardElement, Elements, useElements, useStripe } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
-import { confirmStripeOrderPayment, createStripePaymentIntent } from '../services/api';
+import { confirmStripeOrderPayment, createStripePaymentIntent, fetchStripePublishableKey } from '../services/api';
 import { CreditCard, CheckCircle2, XCircle } from 'lucide-react';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 
-const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string | undefined;
-const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null;
+const envStripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string | undefined;
+
+function isValidStripePublishableKey(key?: string | null): key is string {
+  const value = (key || '').trim();
+  if (!value) return false;
+  if (!value.startsWith('pk_')) return false;
+  return true;
+}
 
 /**
  * Form de pago aislado para usar hooks de Stripe (`useStripe`, `useElements`).
@@ -143,6 +149,47 @@ export function Checkout() {
   const { user, addPurchasedProduct } = useAuth();
   const { items, totalPrice, clearCart } = useCart();
   const navigate = useNavigate();
+  const [stripePromise, setStripePromise] = useState<ReturnType<typeof loadStripe> | null>(null);
+  const [stripeConfigReady, setStripeConfigReady] = useState(false);
+  const [stripeConfigError, setStripeConfigError] = useState('');
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function setupStripe() {
+      setStripeConfigError('');
+
+      if (isValidStripePublishableKey(envStripePublishableKey)) {
+        if (isMounted) {
+          setStripePromise(loadStripe(envStripePublishableKey));
+          setStripeConfigReady(true);
+        }
+        return;
+      }
+
+      try {
+        const backendKey = await fetchStripePublishableKey();
+        if (isMounted && isValidStripePublishableKey(backendKey)) {
+          setStripePromise(loadStripe(backendKey));
+        } else if (isMounted) {
+          setStripeConfigError('No se recibió una publishable key válida desde el backend.');
+        }
+      } catch (error) {
+        if (isMounted) {
+          setStripeConfigError(error instanceof Error ? error.message : 'No se pudo cargar la configuración de Stripe.');
+        }
+      } finally {
+        if (isMounted) {
+          setStripeConfigReady(true);
+        }
+      }
+    }
+
+    setupStripe();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Redirect if not logged in or cart is empty
   if (!user) {
@@ -195,10 +242,13 @@ export function Checkout() {
             <div className="bg-white rounded-lg border border-gray-200 p-6">
               <h2 className="font-semibold text-gray-900 mb-4">Método de Pago</h2>
 
-              {!stripePromise ? (
+              {!stripeConfigReady ? (
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 text-sm">
+                  Cargando configuración de pago...
+                </div>
+              ) : !stripePromise ? (
                 <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-sm">
-                  {/* Mensaje explícito para que cualquier dev sepa qué falta configurar. */}
-                  Configura VITE_STRIPE_PUBLISHABLE_KEY en el frontend para habilitar pagos con Stripe.
+                  {stripeConfigError || 'No se pudo inicializar Stripe. Revisa STRIPE_PUBLISHABLE_KEY en backend y reinicia web/frontend.'}
                 </div>
               ) : (
                 <Elements stripe={stripePromise}>

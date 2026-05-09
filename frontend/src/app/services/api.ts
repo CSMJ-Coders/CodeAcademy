@@ -90,6 +90,11 @@ interface CreateStripeIntentResponse {
   order: ApiOrder;
 }
 
+interface StripeConfigResponse {
+  publishable_key: string;
+  configured: boolean;
+}
+
 interface ApiBookDownloadPolicy {
   book_id: number;
   download_count: number;
@@ -535,6 +540,18 @@ export async function createStripePaymentIntent(
     publishableKey: data.publishable_key,
     order: mapOrder(data.order),
   };
+}
+
+export async function fetchStripePublishableKey(): Promise<string> {
+  // Fallback para frontend Docker/local cuando VITE_* no está disponible.
+  const res = await fetch('/api/orders/stripe-config/');
+
+  if (!res.ok) {
+    throw new Error('No se pudo obtener configuración de Stripe.');
+  }
+
+  const data: StripeConfigResponse = await res.json();
+  return (data.publishable_key || '').trim();
 }
 
 export async function confirmStripeOrderPayment(orderId: string): Promise<Order> {
