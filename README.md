@@ -1,5 +1,120 @@
 # Code Academy
 
+Plataforma eCommerce de cursos y libros de programación con Django, React y Stripe.
+
+## Estado del proyecto
+
+El proyecto ya tiene implementados los flujos principales:
+
+- autenticación con JWT
+- catálogo de productos con filtros
+- carrito persistente en backend
+- órdenes y pagos con Stripe en modo test
+- acceso protegido a libros y cursos
+- progreso de cursos y certificados
+- panel admin mejorado
+- seed data reproducible
+- Docker full stack para desarrollo
+
+## Arquitectura
+
+- Backend: Django 4.2 + DRF + PostgreSQL
+- Frontend: React + TypeScript + Vite
+- Auth: JWT con `djangorestframework-simplejwt`
+- Pagos: Stripe (modo test)
+- Infra local: Docker Compose
+
+Si quieres la versión más completa de arquitectura, operaciones y handover, revisa:
+
+- [docs/HANDOVER.md](docs/HANDOVER.md)
+
+## Inicio rápido
+
+### 1) Requisitos
+
+- Docker Desktop
+- Node.js 18+ si vas a correr frontend fuera de Docker
+- Git
+- Stripe CLI opcional para webhooks locales
+
+### 2) Variables de entorno
+
+```bash
+cp .env.example .env
+cp frontend/.env.example frontend/.env
+```
+
+Completa al menos:
+
+- `DJANGO_SECRET_KEY`
+- `STRIPE_SECRET_KEY`
+- `STRIPE_PUBLISHABLE_KEY`
+- `STRIPE_WEBHOOK_SECRET` si usas `stripe listen`
+
+### 3) Levantar todo
+
+```bash
+docker compose up -d --build
+docker compose exec web python manage.py migrate
+```
+
+### 4) URLs
+
+- Frontend: http://localhost:5173
+- API: http://localhost:8000/api/test/
+- Admin: http://localhost:8000/admin/
+
+## Seed data
+
+Si necesitas cargar el catálogo demo desde cero:
+
+```bash
+docker compose exec web python manage.py seed_catalog --clear
+```
+
+Este comando es idempotente y está probado.
+
+## Flujo de prueba recomendado
+
+1. Registrarte o iniciar sesión.
+2. Explorar catálogo.
+3. Agregar productos al carrito.
+4. Ir al checkout y pagar con Stripe test.
+5. Revisar órdenes.
+6. Descargar un libro o avanzar un curso.
+
+Tarjeta de prueba de Stripe:
+
+- `4242 4242 4242 4242`
+- fecha futura
+- CVC cualquiera
+
+## Comandos útiles
+
+```bash
+docker compose ps
+docker compose logs -f web
+docker compose logs -f frontend
+docker compose exec web python manage.py test
+docker compose exec web python manage.py test products -v2
+docker compose exec web python manage.py test cart -v2
+```
+
+## Reinicio limpio
+
+```bash
+docker compose down
+docker compose up -d --build
+docker compose exec web python manage.py migrate
+```
+
+## Notas de entrega
+
+- El proyecto está en la rama `sprint-4`.
+- Los cambios se están versionando con commits semánticos.
+- Para producción todavía falta el endurecimiento final de settings y despliegue con nginx/gunicorn; el proyecto actual ya es totalmente usable en desarrollo y demo.
+# Code Academy
+
 Plataforma eCommerce para cursos y libros de programación.
 
 ## Stack
