@@ -22,3 +22,4 @@ Pillow                               # Procesamiento de imágenes (para las port
 stripe                               # Pasarela de pagos (modo test/live)
 reportlab                            # Generación de certificados PDF
 requests                             # Cliente HTTP para notificaciones webhook
+gunicorn                             # WSGI server para producción

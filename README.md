@@ -110,9 +110,9 @@ docker compose exec web python manage.py migrate
 
 ## Notas de entrega
 
-- El proyecto está en la rama `sprint-4`.
+- El proyecto está en la rama `main`.
 - Los cambios se están versionando con commits semánticos.
-- Para producción todavía falta el endurecimiento final de settings y despliegue con nginx/gunicorn; el proyecto actual ya es totalmente usable en desarrollo y demo.
+
 # Code Academy
 
 Plataforma eCommerce para cursos y libros de programación.

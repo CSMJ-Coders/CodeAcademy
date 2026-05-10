@@ -1,0 +1,54 @@
+services:
+  db:
+    image: postgres:16
+    env_file: .env
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-digital_user} -d ${DB_NAME:-digital_store}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build:
+      context: .
+      dockerfile: dockerfile.prod
+    env_file: .env
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings_production
+      DB_HOST: db
+      DB_PORT: "5432"
+      GUNICORN_WORKERS: "3"
+      GUNICORN_TIMEOUT: "120"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - static_volume:/app/app/staticfiles
+      - media_volume:/app/app/media
+    healthcheck:
+      test: ["CMD-SHELL", "python manage.py check --deploy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  nginx:
+    image: nginx:1.27-alpine
+    depends_on:
+      - web
+    ports:
+      - "80:80"
+    volumes:
+      - ./deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - static_volume:/static:ro
+      - media_volume:/media:ro
+
+volumes:
+  pgdata:
+  static_volume:
+  media_volume:
