@@ -39,20 +39,17 @@ jobs:
         pip install -r requirements.txt
         pip install -r requirements-dev.txt
 
-    - name: Run Django tests
+    - name: Run tests with coverage
       env:
         DEBUG: 'False'
         DATABASE_URL: postgresql://postgres:postgres@localhost:5432/codeacademy
+        DB_NAME: codeacademy
+        DB_USER: postgres
+        DB_PASSWORD: postgres
+        DB_HOST: localhost
+        DB_PORT: 5432
         SECRET_KEY: test-secret-key-do-not-use-in-production
-      run: |
-        cd app
-        python manage.py test --keepdb --verbosity=2
-
-    - name: Run pytest with coverage
-      env:
-        DEBUG: 'False'
-        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/codeacademy
-        SECRET_KEY: test-secret-key-do-not-use-in-production
+        DJANGO_SETTINGS_MODULE: config.settings
       run: |
         pytest --cov=app app/ --cov-report=xml
 
@@ -100,7 +97,7 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: '20'
         cache: 'npm'
         cache-dependency-path: frontend/package-lock.json
 
@@ -129,7 +126,7 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: '20'
         cache: 'npm'
         cache-dependency-path: frontend/package-lock.json
 
