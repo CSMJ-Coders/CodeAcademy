@@ -1,38 +1,60 @@
 import { Link } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
-import { products } from '../data/mockData';
 import { GraduationCap, Clock, Play } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { fetchCourseProgress } from '../services/api';
+import { fetchCourseProgress, fetchProducts } from '../services/api';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
+import type { Product } from '../types';
 
 export function MyCourses() {
   const { purchasedProducts } = useAuth();
+  const [myCourses, setMyCourses] = useState<Product[]>([]);
   const [progressMap, setProgressMap] = useState<Record<string, number>>({});
-
-  const myCourses = products.filter(
-    p => p.type === 'course' && purchasedProducts.includes(p.id)
-  );
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const purchasedCourses = myCourses.map((course) => course.id);
-    if (purchasedCourses.length === 0) return;
+    async function loadCourses() {
+      try {
+        const allCourses = await fetchProducts({ type: 'course' });
+        const purchased = allCourses.filter(c => purchasedProducts.includes(c.id));
+        setMyCourses(purchased);
+      } catch {
+        setMyCourses([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadCourses();
+  }, [purchasedProducts.join(',')]);
+
+  useEffect(() => {
+    if (myCourses.length === 0) return;
 
     Promise.all(
-      purchasedCourses.map(async (courseId) => {
+      myCourses.map(async (course) => {
         try {
-          const progress = await fetchCourseProgress(courseId);
-          return [courseId, progress.progress] as const;
+          const progress = await fetchCourseProgress(course.id);
+          return [course.id, progress.progress] as const;
         } catch {
-          return [courseId, 0] as const;
+          return [course.id, 0] as const;
         }
       })
     ).then((entries) => {
       setProgressMap(Object.fromEntries(entries));
     });
-  }, [purchasedProducts.join(',')]);
+  }, [myCourses.map(c => c.id).join(',')]);
 
   const getCourseProgress = (courseId: string) => progressMap[courseId] ?? 0;
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-lg border border-gray-200 p-12">
+        <div className="text-center">
+          <p className="text-gray-600">Cargando cursos...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (myCourses.length === 0) {
     return (
