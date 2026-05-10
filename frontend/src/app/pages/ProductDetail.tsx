@@ -65,14 +65,14 @@ export function ProductDetail() {
 
   const isPurchased = purchasedProducts.includes(product.id);
 
-  const handleAddToCart = () => {
-    addToCart(product);
+  const handleAddToCart = async () => {
+    await addToCart(product);
     setShowSuccess(true);
     setTimeout(() => setShowSuccess(false), 3000);
   };
 
-  const handleBuyNow = () => {
-    addToCart(product);
+  const handleBuyNow = async () => {
+    await addToCart(product);
     navigate('/checkout');
   };
 

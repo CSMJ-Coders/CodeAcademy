@@ -2,7 +2,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from .models import Cart, CartItem
 from .serializers import CartSerializer, AddToCartSerializer
@@ -22,6 +22,19 @@ def _get_or_create_cart(request):
     key = session.session_key
     cart, _ = Cart.objects.get_or_create(session_key=key)
     return cart
+
+
+def _merge_carts(source_cart, target_cart):
+    for source_item in source_cart.items.select_related('product'):
+        target_item, created = CartItem.objects.get_or_create(
+            cart=target_cart,
+            product=source_item.product,
+            defaults={'quantity': source_item.quantity},
+        )
+        if not created:
+            target_item.quantity += source_item.quantity
+            target_item.save(update_fields=['quantity'])
+    source_cart.delete()
 
 
 class CartView(APIView):
@@ -53,6 +66,25 @@ class CartView(APIView):
         cart = _get_or_create_cart(request)
         cart.items.all().delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class CartMergeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        if not request.session.session_key:
+            return Response({'detail': 'No hay carrito anónimo para fusionar.'}, status=status.HTTP_200_OK)
+
+        anonymous_cart = Cart.objects.filter(session_key=request.session.session_key, user__isnull=True).first()
+        if not anonymous_cart:
+            return Response({'detail': 'No hay carrito anónimo para fusionar.'}, status=status.HTTP_200_OK)
+
+        user_cart, _ = Cart.objects.get_or_create(user=request.user)
+        if anonymous_cart.pk == user_cart.pk:
+            return Response(CartSerializer(user_cart, context={'request': request}).data)
+
+        _merge_carts(anonymous_cart, user_cart)
+        return Response(CartSerializer(user_cart, context={'request': request}).data)
 
 
 class CartItemView(APIView):

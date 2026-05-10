@@ -112,6 +112,20 @@ interface ApiCourseProgress {
   certificate_issued?: boolean;
 }
 
+interface ApiCartItem {
+  id: number;
+  product: ApiProduct;
+  quantity: number;
+}
+
+interface ApiCart {
+  id: number;
+  user: number | null;
+  session_key: string | null;
+  items: ApiCartItem[];
+  total: string;
+}
+
 function resolveProductImageUrl(image: string): string {
   const value = (image || '').trim();
   if (!value) return '';
@@ -136,6 +150,32 @@ function resolveProductImageUrl(image: string): string {
   }
 
   return value;
+}
+
+async function fetchApiWithOptionalAuth(url: string, init: RequestInit = {}): Promise<Response> {
+  const access = localStorage.getItem(ACCESS_TOKEN_KEY);
+  if (!access) {
+    return fetch(url, init);
+  }
+
+  const response = await fetchWithAuthRetry(url, init, Boolean(init.body));
+  return response;
+}
+
+function mapCartItem(apiItem: ApiCartItem) {
+  return {
+    id: String(apiItem.id),
+    product: mapProduct(apiItem.product),
+    quantity: apiItem.quantity,
+  };
+}
+
+function mapCart(apiCart: ApiCart) {
+  return {
+    id: String(apiCart.id),
+    items: apiCart.items.map(mapCartItem),
+    total: parseFloat(apiCart.total),
+  };
 }
 
 // Respuesta paginada de DRF (lo que devuelve /api/products/)
@@ -445,6 +485,96 @@ export async function fetchCourseProgress(courseId: string): Promise<{ progress:
     completedChapters: data.completed_chapters ?? [],
     currentChapter: data.current_chapter ?? undefined,
   };
+}
+
+export async function fetchCart(): Promise<{ id: string; items: Array<{ id: string; product: Product; quantity: number }>; total: number }> {
+  const res = await fetchApiWithOptionalAuth('/api/cart/');
+  if (!res.ok) {
+    throw new Error('No se pudo cargar el carrito.');
+  }
+
+  const data: ApiCart = await res.json();
+  return mapCart(data);
+}
+
+export async function addCartItem(productId: string, quantity = 1) {
+  const res = await fetchApiWithOptionalAuth('/api/cart/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ product_id: Number(productId), quantity }),
+  });
+
+  if (!res.ok) {
+    throw new Error('No se pudo agregar el producto al carrito.');
+  }
+
+  const data: ApiCart = await res.json();
+  return mapCart(data);
+}
+
+export async function updateCartItem(itemId: string, quantity: number) {
+  const res = await fetchApiWithOptionalAuth(`/api/cart/items/${itemId}/`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ quantity }),
+  });
+
+  if (!res.ok) {
+    throw new Error('No se pudo actualizar el carrito.');
+  }
+
+  return true;
+}
+
+export async function removeCartItem(itemId: string) {
+  const res = await fetchApiWithOptionalAuth(`/api/cart/items/${itemId}/`, {
+    method: 'DELETE',
+  });
+
+  if (!res.ok && res.status !== 204) {
+    throw new Error('No se pudo eliminar el producto del carrito.');
+  }
+
+  return true;
+}
+
+export async function clearCartApi() {
+  const res = await fetchApiWithOptionalAuth('/api/cart/', {
+    method: 'DELETE',
+  });
+
+  if (!res.ok && res.status !== 204) {
+    throw new Error('No se pudo vaciar el carrito.');
+  }
+
+  return true;
+}
+
+export async function updateCartItemQuantity(itemId: string, quantity: number) {
+  const res = await fetchApiWithOptionalAuth(`/api/cart/items/${itemId}/`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ quantity }),
+  });
+
+  if (!res.ok) {
+    throw new Error('No se pudo actualizar la cantidad del item.');
+  }
+
+  return true;
+}
+
+export async function mergeAnonymousCart() {
+  const res = await fetchWithAuthRetry('/api/cart/merge/', {
+    method: 'POST',
+  });
+
+  if (!res.ok) {
+    throw new Error('No se pudo migrar el carrito anónimo.');
+  }
+
+  const data: ApiCart = await res.json();
+  return mapCart(data);
 }
 
 export async function completeCourseChapter(courseId: string, chapterId: string): Promise<{ progress: number; completedChapters: string[]; certificateIssued: boolean }> {

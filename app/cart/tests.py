@@ -41,3 +41,14 @@ class CartAPITest(TestCase):
         item_url = reverse('cart-item', args=[item_id])
         res2 = self.client.put(item_url, {'quantity': 3}, format='json')
         self.assertEqual(res2.status_code, 200)
+
+    def test_merge_anonymous_cart_into_user_cart(self):
+        self.client.post(reverse('cart-root'), {'product_id': self.product.id, 'quantity': 2})
+
+        user = User.objects.create_user(email='cart@example.com', username='cartuser', password='StrongPass123!')
+        self.client.force_authenticate(user=user)
+
+        merge_response = self.client.post(reverse('cart-merge'))
+        self.assertEqual(merge_response.status_code, 200)
+        self.assertEqual(len(merge_response.json()['items']), 1)
+        self.assertEqual(merge_response.json()['items'][0]['quantity'], 2)

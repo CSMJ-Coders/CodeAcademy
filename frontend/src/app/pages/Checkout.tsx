@@ -200,10 +200,10 @@ export function Checkout() {
     return <Navigate to="/cart" />;
   }
 
-  const handlePaymentSuccess = (orderId: string) => {
+  const handlePaymentSuccess = async (orderId: string) => {
     // UX inmediata del cliente. El backend ya guardó la compra.
     items.forEach((item) => addPurchasedProduct(item.product.id));
-    clearCart();
+    await clearCart();
     navigate(`/order-confirmation/${orderId}`);
   };
 
