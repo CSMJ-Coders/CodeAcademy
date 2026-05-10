@@ -39,7 +39,8 @@ jobs:
         # Ensure 'packaging' is available to avoid resolver conflicts on the runner
         python -m pip install packaging
         pip install -r requirements.txt
-        pip install -r requirements-dev.txt
+        # Install only test-related dev packages to avoid dependency resolver conflicts
+        pip install pytest pytest-django pytest-cov factory-boy freezegun
 
     - name: Run tests with coverage
       env:
