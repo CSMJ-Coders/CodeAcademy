@@ -2,6 +2,7 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from django.utils.text import slugify
 from rest_framework import serializers
+from rest_framework.exceptions import AuthenticationFailed
 
 from .models import User
 
@@ -106,10 +107,10 @@ class LoginSerializer(serializers.Serializer):
 
         user = authenticate(request=self.context.get('request'), email=email, password=password)
         if not user:
-            raise serializers.ValidationError('Credenciales inválidas.')
+            raise AuthenticationFailed('Credenciales inválidas.')
 
         if not user.is_active:
-            raise serializers.ValidationError('Esta cuenta está desactivada.')
+            raise AuthenticationFailed('Esta cuenta está desactivada.')
 
         attrs['user'] = user
         return attrs

@@ -116,11 +116,13 @@ def multiple_products(db, test_category):
     return products
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def django_db_setup(django_db_setup, django_db_blocker):
     """
     Configure Django test database.
     This fixture is automatically used by pytest-django.
+    It must be session scoped to avoid ScopeMismatch when accessed
+    from class-scoped test requests.
     """
     with django_db_blocker.unblock():
         pass
