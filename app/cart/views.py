@@ -98,8 +98,8 @@ class CartItemView(APIView):
             item.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         item.quantity = qty
-        item.save()
-        return Response({'ok': True})
+        item.save(update_fields=['quantity'])
+        return Response({'quantity': item.quantity, 'id': item.pk})
 
     def delete(self, request, pk):
         cart = _get_or_create_cart(request)
