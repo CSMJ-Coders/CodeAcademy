@@ -15,6 +15,7 @@ la factura histórica debe mantenerse intacta.
 from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 
 class Order(models.Model):
@@ -27,16 +28,16 @@ class Order(models.Model):
     STATUS_COMPLETED = "completed"
     STATUS_FAILED = "failed"
     STATUS_CHOICES = [
-        (STATUS_PENDING, "Pendiente"),
-        (STATUS_COMPLETED, "Completada"),
-        (STATUS_FAILED, "Fallida"),
+        (STATUS_PENDING, _("Pendiente")),
+        (STATUS_COMPLETED, _("Completada")),
+        (STATUS_FAILED, _("Fallida")),
     ]
 
     PROVIDER_SANDBOX = "sandbox"
     PROVIDER_STRIPE = "stripe"
     PROVIDER_CHOICES = [
-        (PROVIDER_SANDBOX, "Sandbox"),
-        (PROVIDER_STRIPE, "Stripe"),
+        (PROVIDER_SANDBOX, _("Sandbox")),
+        (PROVIDER_STRIPE, _("Stripe")),
     ]
 
     user = models.ForeignKey(
@@ -64,8 +65,8 @@ class Order(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
-        verbose_name = "Orden"
-        verbose_name_plural = "Órdenes"
+        verbose_name = _("Orden")
+        verbose_name_plural = _("Órdenes")
 
     def __str__(self):
         return f"Order #{self.id} - {self.user.email} - {self.status}"
@@ -91,8 +92,8 @@ class OrderItem(models.Model):
 
     class Meta:
         ordering = ["id"]
-        verbose_name = "Ítem de orden"
-        verbose_name_plural = "Ítems de orden"
+        verbose_name = _("Ítem de orden")
+        verbose_name_plural = _("Ítems de orden")
 
     def __str__(self):
         return f"{self.product_title} x{self.quantity}"

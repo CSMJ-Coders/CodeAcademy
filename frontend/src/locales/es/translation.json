@@ -1,0 +1,72 @@
+{
+  "navbar": {
+    "home": "Inicio",
+    "catalog": "Catálogo",
+    "myOrders": "Mis Órdenes",
+    "login": "Iniciar sesión",
+    "logout": "Cerrar sesión",
+    "myProfile": "Mi perfil",
+    "courses": "Cursos",
+    "books": "Libros",
+    "explore": "Explorar"
+  },
+  "home": {
+    "heroTitle": "Aprende Programación con Cursos y Libros Especializados",
+    "heroSubtitle": "Accede a contenido de calidad creado por expertos. Cursos interactivos y libros técnicos para impulsar tu carrera en tecnología.",
+    "exploreCourses": "Explorar Cursos",
+    "seeBooks": "Ver Libros"
+  },
+  "buttons": {
+    "buy": "Comprar",
+    "addToCart": "Agregar al carrito",
+    "checkout": "Pagar",
+    "continue": "Continuar",
+    "viewCourses": "Ver Mis Cursos",
+    "viewBooks": "Ver Mis Libros"
+  },
+  "login": {
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "submit": "Entrar"
+  },
+  "messages": {
+    "noOrders": "No tienes órdenes aún.",
+    "ordersInfo": "Tus compras aparecerán aquí",
+    "orderNotFound": "Orden no encontrada"
+  },
+  "search": {
+    "placeholder": "Buscar cursos y libros..."
+  },
+  "words": {
+    "order": "orden",
+    "orders": "órdenes",
+    "product": "producto",
+    "products": "productos",
+    "course": "Curso",
+    "book": "Libro"
+  },
+  "order": {
+    "successTitle": "¡Compra Exitosa!",
+    "successMessage": "Tu orden ha sido procesada correctamente",
+    "orderNumber": "Orden",
+    "completed": "Completado",
+    "products": "Productos Adquiridos",
+    "nextSteps": "Próximos Pasos",
+    "next1": "Tus productos están disponibles en tu cuenta",
+    "next2": "Puedes acceder a tus cursos y libros en cualquier momento",
+    "next3": "Los libros están listos para descargar (3 descargas por libro)"
+  },
+  "footer": {
+    "description": "La mejor plataforma para aprender programación con cursos y libros especializados.",
+    "platform": "Plataforma",
+    "support": "Soporte",
+    "helpCenter": "Centro de Ayuda",
+    "contact": "Contacto",
+    "faq": "FAQ",
+    "legal": "Legal",
+    "terms": "Términos y Condiciones",
+    "privacy": "Política de Privacidad",
+    "cookies": "Política de Cookies",
+    "copyright": "© 2026 Code Academy. Todos los derechos reservados."
+  }
+}

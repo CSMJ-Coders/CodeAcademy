@@ -14,6 +14,7 @@ import json
 
 import stripe
 from django.conf import settings
+from django.utils.translation import gettext_lazy as _
 from rest_framework import generics, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -119,7 +120,7 @@ class ConfirmStripePaymentView(APIView):
     def post(self, request, pk):
         if not settings.STRIPE_SECRET_KEY:
             return Response(
-                {"detail": "Stripe no está configurado."},
+                {"detail": _("Stripe no está configurado.")},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
@@ -131,18 +132,18 @@ class ConfirmStripePaymentView(APIView):
             )
         except Order.DoesNotExist:
             return Response(
-                {"detail": "Orden no encontrada."}, status=status.HTTP_404_NOT_FOUND
+                {"detail": _("Orden no encontrada.")}, status=status.HTTP_404_NOT_FOUND
             )
 
         if order.payment_provider != Order.PROVIDER_STRIPE:
             return Response(
-                {"detail": "La orden no usa Stripe."},
+                {"detail": _("La orden no usa Stripe.")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         if not order.payment_reference:
             return Response(
-                {"detail": "La orden no tiene referencia de pago."},
+                {"detail": _("La orden no tiene referencia de pago.")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -150,7 +151,7 @@ class ConfirmStripePaymentView(APIView):
             payment_intent = stripe.PaymentIntent.retrieve(order.payment_reference)
         except stripe.error.StripeError as exc:
             return Response(
-                {"detail": f"No se pudo consultar Stripe: {str(exc)}"},
+                {"detail": _("No se pudo consultar Stripe: {}").format(str(exc))},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -187,7 +188,7 @@ class StripeWebhookView(APIView):
                 event = json.loads(payload.decode("utf-8"))
         except Exception:
             return Response(
-                {"detail": "Webhook inválido."}, status=status.HTTP_400_BAD_REQUEST
+                {"detail": _("Webhook inválido.")}, status=status.HTTP_400_BAD_REQUEST
             )
 
         event_type = event.get("type")

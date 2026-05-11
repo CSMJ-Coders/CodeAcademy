@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 
 class User(AbstractUser):
@@ -23,8 +24,8 @@ class User(AbstractUser):
     preferred_language = models.CharField(
         max_length=10,
         choices=[
-            ('es', 'Spanish'),
-            ('en', 'English'),
+            ('es', _('Spanish')),
+            ('en', _('English')),
         ],
         default='es'
     )

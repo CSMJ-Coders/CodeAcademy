@@ -1,0 +1,174 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-05-11 18:16+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+#: config/settings.py:188 products/models.py:75
+msgid "Español"
+msgstr ""
+
+#: config/settings.py:189 users/models.py:28
+msgid "English"
+msgstr ""
+
+#: orders/models.py:31
+msgid "Pendiente"
+msgstr ""
+
+#: orders/models.py:32
+msgid "Completada"
+msgstr ""
+
+#: orders/models.py:33
+msgid "Fallida"
+msgstr ""
+
+#: orders/models.py:39
+msgid "Sandbox"
+msgstr ""
+
+#: orders/models.py:40
+msgid "Stripe"
+msgstr ""
+
+#: orders/models.py:68
+msgid "Orden"
+msgstr ""
+
+#: orders/models.py:69
+msgid "Órdenes"
+msgstr ""
+
+#: orders/models.py:95
+msgid "Ítem de orden"
+msgstr ""
+
+#: orders/models.py:96
+msgid "Ítems de orden"
+msgstr ""
+
+#: orders/views.py:123
+msgid "Stripe no está configurado."
+msgstr ""
+
+#: orders/views.py:135
+msgid "Orden no encontrada."
+msgstr ""
+
+#: orders/views.py:140
+msgid "La orden no usa Stripe."
+msgstr ""
+
+#: orders/views.py:146
+msgid "La orden no tiene referencia de pago."
+msgstr ""
+
+#: orders/views.py:154
+msgid "No se pudo consultar Stripe: {}"
+msgstr ""
+
+#: orders/views.py:191
+msgid "Webhook inválido."
+msgstr ""
+
+#: products/models.py:37
+msgid "Categoría"
+msgstr ""
+
+#: products/models.py:38
+msgid "Categorías"
+msgstr ""
+
+#: products/models.py:59
+msgid "Curso"
+msgstr ""
+
+#: products/models.py:60
+msgid "Libro"
+msgstr ""
+
+#: products/models.py:67
+msgid "Principiante"
+msgstr ""
+
+#: products/models.py:68
+msgid "Intermedio"
+msgstr ""
+
+#: products/models.py:69
+msgid "Avanzado"
+msgstr ""
+
+#: products/models.py:76
+msgid "Inglés"
+msgstr ""
+
+#: products/models.py:137
+msgid "Producto"
+msgstr ""
+
+#: products/models.py:138
+msgid "Productos"
+msgstr ""
+
+#: products/models.py:152
+msgid "Un curso no puede tener páginas."
+msgstr ""
+
+#: products/models.py:154
+msgid "Un libro no puede tener duración."
+msgstr ""
+
+#: products/models.py:156
+msgid "Un libro debe tener archivo PDF."
+msgstr ""
+
+#: products/models.py:181
+msgid "Capítulo"
+msgstr ""
+
+#: products/models.py:182
+msgid "Capítulos"
+msgstr ""
+
+#: products/models.py:207
+msgid "Entrada de índice"
+msgstr ""
+
+#: products/models.py:208
+msgid "Entradas de índice"
+msgstr ""
+
+#: products/models.py:234
+msgid "Descarga de libro"
+msgstr ""
+
+#: products/models.py:235
+msgid "Descargas de libros"
+msgstr ""
+
+#: products/models.py:271
+msgid "Progreso de curso"
+msgstr ""
+
+#: products/models.py:272
+msgid "Progresos de cursos"
+msgstr ""
+
+#: users/models.py:27
+msgid "Spanish"
+msgstr ""
