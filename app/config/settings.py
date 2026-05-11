@@ -12,6 +12,7 @@ import sys
 
 from dotenv import load_dotenv
 from django.utils.translation import gettext_lazy as _
+import dj_database_url
 
 # ============================================
 # Cargar variables de entorno desde .env
@@ -55,7 +56,10 @@ USE_SQLITE_FOR_LOCAL = os.environ.get("USE_SQLITE_FOR_LOCAL", "False").lower() i
     "1",
     "yes",
 )
-RUNNING_TESTS = any(arg == "test" or arg.startswith("test ") for arg in sys.argv[1:])
+RUNNING_TESTS = any(
+    arg in ["test", "pytest"] or arg.endswith("pytest") or "manage.py test" in arg
+    for arg in sys.argv
+)
 
 
 # ============================================
@@ -81,6 +85,7 @@ INSTALLED_APPS = [
     "core",  # Utilidades compartidas (base models, permisos)
     "users",  # Gestión de usuarios
     "products",  # Catálogo de cursos y libros
+    "cart",  # Carrito de compras
     "orders",  # Órdenes de compra y checkout
 ]
 
@@ -130,15 +135,24 @@ WSGI_APPLICATION = "config.wsgi.application"
 # ============================================
 # Base de Datos
 # ============================================
-# Usamos PostgreSQL como base principal del proyecto.
-# Pero dejamos un fallback opcional a SQLite para validación rápida local/tests.
-if USE_SQLITE_FOR_LOCAL or RUNNING_TESTS:
+# Si hay una DATABASE_URL definida (común en CI/CD o Heroku), la usamos prioritariamente.
+if os.environ.get("DATABASE_URL"):
+    DATABASES = {
+        "default": dj_database_url.config(
+            default=os.environ.get("DATABASE_URL"),
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
+    }
+# Si estamos en modo test o forzamos SQLite localmente.
+elif USE_SQLITE_FOR_LOCAL or RUNNING_TESTS:
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
             "NAME": BASE_DIR / "db.sqlite3",
         }
     }
+# Configuración estándar de PostgreSQL (Docker / Desarrollo local).
 else:
     DATABASES = {
         "default": {

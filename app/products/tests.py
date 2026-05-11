@@ -17,6 +17,9 @@ Ejecutar:
   docker compose exec web python manage.py test products --verbosity=2
 """
 
+from io import StringIO
+
+from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -280,3 +283,21 @@ class ProductProtectionAndProgressTests(TestCase):
 
         certificate = self.client.get(reverse('course-certificate', args=[self.course.pk]))
         self.assertEqual(certificate.status_code, 200)
+
+
+class SeedCatalogCommandTests(TestCase):
+    def test_seed_catalog_populates_all_core_records_and_is_idempotent(self):
+        out = StringIO()
+        call_command('seed_catalog', '--clear', stdout=out)
+
+        self.assertEqual(Category.objects.count(), 6)
+        self.assertEqual(Product.objects.count(), 10)
+        self.assertEqual(Chapter.objects.count(), 23)
+        self.assertEqual(TableOfContentsEntry.objects.count(), 22)
+
+        # Ejecutar otra vez no debe duplicar registros porque el comando usa update_or_create.
+        call_command('seed_catalog', stdout=out)
+        self.assertEqual(Category.objects.count(), 6)
+        self.assertEqual(Product.objects.count(), 10)
+        self.assertEqual(Chapter.objects.count(), 23)
+        self.assertEqual(TableOfContentsEntry.objects.count(), 22)

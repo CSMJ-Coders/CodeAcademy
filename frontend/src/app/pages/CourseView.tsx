@@ -1,18 +1,43 @@
 import { useParams, Navigate, Link } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
-import { products } from '../data/mockData';
 import { CheckCircle2, Circle, Play, ArrowLeft } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { completeCourseChapter, downloadCourseCertificate, fetchCourseProgress } from '../services/api';
+import { completeCourseChapter, downloadCourseCertificate, fetchCourseProgress, fetchProductById } from '../services/api';
+import type { Product } from '../types';
 
 export function CourseView() {
   const { id } = useParams();
   const { purchasedProducts } = useAuth();
+  const [course, setCourse] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
   const [currentChapter, setCurrentChapter] = useState(0);
   const [completedChapters, setCompletedChapters] = useState<string[]>([]);
   const [progressPercentage, setProgressPercentage] = useState(0);
 
-  const course = products.find(p => p.id === id && p.type === 'course');
+  useEffect(() => {
+    async function loadCourse() {
+      if (!id) return;
+      try {
+        const product = await fetchProductById(id);
+        if (product && product.type === 'course') {
+          setCourse(product);
+        }
+      } catch {
+        setCourse(null);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadCourse();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen pt-16 bg-gray-900 flex items-center justify-center">
+        <p className="text-gray-400">Cargando curso...</p>
+      </div>
+    );
+  }
 
   if (!course) {
     return <Navigate to="/dashboard/courses" />;

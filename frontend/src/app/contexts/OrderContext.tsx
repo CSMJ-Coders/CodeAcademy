@@ -1,40 +1,41 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
-import type { Order, CartItem, OrderStatus } from '../types';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import type { Order } from '../types';
+import { fetchMyOrders } from '../services/api';
 
 interface OrderContextType {
   orders: Order[];
-  createOrder: (items: CartItem[], userId: string, total: number) => Order;
-  updateOrderStatus: (orderId: string, status: OrderStatus) => void;
+  loading: boolean;
+  error: string | null;
+  refetch: () => Promise<void>;
 }
 
 const OrderContext = createContext<OrderContextType | undefined>(undefined);
 
 export function OrderProvider({ children }: { children: ReactNode }) {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const createOrder = (items: CartItem[], userId: string, total: number): Order => {
-    const newOrder: Order = {
-      id: `ORD-${Date.now()}`,
-      userId,
-      items,
-      total,
-      status: 'pending',
-      date: new Date().toISOString()
-    };
-    setOrders(prev => [newOrder, ...prev]);
-    return newOrder;
+  const refetch = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await fetchMyOrders();
+      setOrders(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al cargar órdenes');
+      setOrders([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const updateOrderStatus = (orderId: string, status: OrderStatus) => {
-    setOrders(prev =>
-      prev.map(order =>
-        order.id === orderId ? { ...order, status } : order
-      )
-    );
-  };
+  useEffect(() => {
+    refetch();
+  }, []);
 
   return (
-    <OrderContext.Provider value={{ orders, createOrder, updateOrderStatus }}>
+    <OrderContext.Provider value={{ orders, loading, error, refetch }}>
       {children}
     </OrderContext.Provider>
   );

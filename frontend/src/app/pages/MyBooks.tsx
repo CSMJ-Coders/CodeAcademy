@@ -1,36 +1,48 @@
 import { Link } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
-import { products } from '../data/mockData';
 import { BookOpen, Download, Eye, FileText } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { downloadBookPdf, fetchBookDownloadStatus } from '../services/api';
+import { downloadBookPdf, fetchBookDownloadStatus, fetchProducts } from '../services/api';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
+import type { Product } from '../types';
 
 export function MyBooks() {
   const { purchasedProducts } = useAuth();
+  const [myBooks, setMyBooks] = useState<Product[]>([]);
   const [downloadMap, setDownloadMap] = useState<Record<string, { downloadsRemaining: number; maxDownloads: number }>>({});
-
-  const myBooks = products.filter(
-    p => p.type === 'book' && purchasedProducts.includes(p.id)
-  );
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const purchasedBooks = myBooks.map((book) => book.id);
-    if (purchasedBooks.length === 0) return;
+    async function loadBooks() {
+      try {
+        const allBooks = await fetchProducts({ type: 'book' });
+        const purchased = allBooks.filter(b => purchasedProducts.includes(b.id));
+        setMyBooks(purchased);
+      } catch {
+        setMyBooks([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadBooks();
+  }, [purchasedProducts.join(',')]);
+
+  useEffect(() => {
+    if (myBooks.length === 0) return;
 
     Promise.all(
-      purchasedBooks.map(async (bookId) => {
+      myBooks.map(async (book) => {
         try {
-          const status = await fetchBookDownloadStatus(bookId);
-          return [bookId, status] as const;
+          const status = await fetchBookDownloadStatus(book.id);
+          return [book.id, status] as const;
         } catch {
-          return [bookId, { downloadsRemaining: 0, maxDownloads: 0 }] as const;
+          return [book.id, { downloadsRemaining: 0, maxDownloads: 0 }] as const;
         }
       })
     ).then((entries) => {
       setDownloadMap(Object.fromEntries(entries));
     });
-  }, [purchasedProducts.join(',')]);
+  }, [myBooks.map(b => b.id).join(',')]);
 
   const getBookDownloads = (bookId: string) => downloadMap[bookId] || { downloadsRemaining: 0, maxDownloads: 0 };
 
@@ -43,6 +55,16 @@ export function MyBooks() {
       alert(error instanceof Error ? error.message : 'No se pudo descargar el libro.');
     }
   };
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-lg border border-gray-200 p-12">
+        <div className="text-center">
+          <p className="text-gray-600">Cargando libros...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (myBooks.length === 0) {
     return (

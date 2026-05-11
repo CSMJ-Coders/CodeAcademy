@@ -1,40 +1,84 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
 import type { Product, CartItem } from '../types';
+import { useAuth } from './AuthContext';
+import {
+  addCartItem,
+  clearCartApi,
+  fetchCart,
+  mergeAnonymousCart,
+  removeCartItem,
+} from '../services/api';
 
 interface CartContextType {
   items: CartItem[];
-  addToCart: (product: Product) => void;
-  removeFromCart: (productId: string) => void;
-  clearCart: () => void;
+  addToCart: (product: Product) => Promise<void>;
+  removeFromCart: (productId: string) => Promise<void>;
+  clearCart: () => Promise<void>;
   totalItems: number;
   totalPrice: number;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
+type CartEntry = CartItem & { id: string };
+
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>([]);
+  const { user } = useAuth();
+  const [entries, setEntries] = useState<CartEntry[]>([]);
 
-  const addToCart = (product: Product) => {
-    setItems(prev => {
-      const existingItem = prev.find(item => item.product.id === product.id);
-      if (existingItem) {
-        return prev.map(item =>
-          item.product.id === product.id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        );
+  const loadCart = async () => {
+    try {
+      const cart = await fetchCart();
+      setEntries(cart.items as CartEntry[]);
+    } catch {
+      setEntries([]);
+    }
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function syncCart() {
+      if (user) {
+        try {
+          await mergeAnonymousCart();
+        } catch {
+          // Si no había carrito anónimo o ya se fusionó, seguimos.
+        }
       }
-      return [...prev, { product, quantity: 1 }];
-    });
+
+      if (!cancelled) {
+        await loadCart();
+      }
+    }
+
+    syncCart();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
+
+  const items = useMemo(() => entries.map(({ id: _id, ...item }) => item), [entries]);
+
+  const addToCart = async (product: Product) => {
+    const updatedCart = await addCartItem(product.id, 1);
+    setEntries(updatedCart.items as CartEntry[]);
   };
 
-  const removeFromCart = (productId: string) => {
-    setItems(prev => prev.filter(item => item.product.id !== productId));
+  const removeFromCart = async (productId: string) => {
+    const entry = entries.find(item => item.product.id === productId);
+    if (!entry) {
+      return;
+    }
+
+    await removeCartItem(entry.id);
+    await loadCart();
   };
 
-  const clearCart = () => {
-    setItems([]);
+  const clearCart = async () => {
+    await clearCartApi();
+    setEntries([]);
   };
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
