@@ -4,9 +4,11 @@ import { CheckCircle2, Download, GraduationCap, BookOpen } from 'lucide-react';
 import { fetchOrderById } from '../services/api';
 import type { Order } from '../types';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
+import { useTranslation } from 'react-i18next';
 
 export function OrderConfirmation() {
   const { orderId } = useParams();
+  const { t, i18n } = useTranslation();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -37,9 +39,9 @@ export function OrderConfirmation() {
     return (
       <div className="min-h-screen pt-20 flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Orden no encontrada</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">{t('messages.orderNotFound', 'Orden no encontrada')}</h1>
           <Link to="/dashboard/orders" className="text-blue-600 hover:text-blue-700">
-            Ver mis órdenes
+            {t('navbar.myOrders')}
           </Link>
         </div>
       </div>
@@ -54,17 +56,17 @@ export function OrderConfirmation() {
           <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <CheckCircle2 className="w-12 h-12 text-green-600" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">¡Compra Exitosa!</h1>
-          <p className="text-gray-600">Tu orden ha sido procesada correctamente</p>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('order.successTitle','¡Compra Exitosa!')}</h1>
+          <p className="text-gray-600">{t('order.successMessage','Tu orden ha sido procesada correctamente')}</p>
         </div>
 
         {/* Order Details */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
           <div className="flex items-center justify-between mb-6 pb-6 border-b border-gray-200">
             <div>
-              <h2 className="font-semibold text-gray-900 mb-1">Orden #{order.id}</h2>
+              <h2 className="font-semibold text-gray-900 mb-1">{t('order.orderNumber', 'Orden')} #{order.id}</h2>
               <p className="text-sm text-gray-500">
-                {new Date(order.date).toLocaleDateString('es-ES', {
+                {new Date(order.date).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'es-ES', {
                   year: 'numeric',
                   month: 'long',
                   day: 'numeric',
@@ -76,14 +78,14 @@ export function OrderConfirmation() {
             <div className="text-right">
               <p className="text-2xl font-bold text-gray-900">${order.total.toFixed(2)}</p>
               <span className="inline-block px-3 py-1 bg-green-100 text-green-700 text-sm rounded-full">
-                Completado
+                {t('order.completed','Completado')}
               </span>
             </div>
           </div>
 
           {/* Products */}
           <div className="space-y-4">
-            <h3 className="font-semibold text-gray-900">Productos Adquiridos</h3>
+            <h3 className="font-semibold text-gray-900">{t('order.products','Productos Adquiridos')}</h3>
             {order.items.map(item => {
               const Icon = item.product.type === 'course' ? GraduationCap : BookOpen;
               return (
@@ -97,7 +99,7 @@ export function OrderConfirmation() {
                     <div className="flex items-center space-x-2 mb-1">
                       <Icon className="w-4 h-4 text-blue-600" />
                       <span className="text-xs text-blue-600 font-medium capitalize">
-                        {item.product.type === 'course' ? 'Curso' : 'Libro'}
+                        {item.product.type === 'course' ? t('words.course','Curso') : t('words.book','Libro')}
                       </span>
                     </div>
                     <h4 className="font-medium text-gray-900">{item.product.title}</h4>
@@ -114,42 +116,42 @@ export function OrderConfirmation() {
 
         {/* Next Steps */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
-          <h3 className="font-semibold text-gray-900 mb-3">Próximos Pasos</h3>
+          <h3 className="font-semibold text-gray-900 mb-3">{t('order.nextSteps','Próximos Pasos')}</h3>
           <ul className="space-y-2">
             <li className="flex items-start space-x-2">
               <CheckCircle2 className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-              <span className="text-gray-700">Tus productos están disponibles en tu cuenta</span>
+              <span className="text-gray-700">{t('order.next1','Tus productos están disponibles en tu cuenta')}</span>
             </li>
             <li className="flex items-start space-x-2">
               <CheckCircle2 className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-              <span className="text-gray-700">Puedes acceder a tus cursos y libros en cualquier momento</span>
+              <span className="text-gray-700">{t('order.next2','Puedes acceder a tus cursos y libros en cualquier momento')}</span>
             </li>
             <li className="flex items-start space-x-2">
               <Download className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-              <span className="text-gray-700">Los libros están listos para descargar (3 descargas por libro)</span>
+              <span className="text-gray-700">{t('order.next3','Los libros están listos para descargar (3 descargas por libro)')}</span>
             </li>
           </ul>
         </div>
 
         {/* Actions */}
         <div className="flex flex-col sm:flex-row gap-4">
-          <Link
+            <Link
             to="/dashboard/courses"
             className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-center font-medium"
           >
-            Ver Mis Cursos
+            {t('buttons.viewCourses','Ver Mis Cursos')}
           </Link>
-          <Link
+            <Link
             to="/dashboard/books"
             className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-center font-medium"
           >
-            Ver Mis Libros
+            {t('buttons.viewBooks','Ver Mis Libros')}
           </Link>
         </div>
 
         <div className="mt-6 text-center">
           <Link to="/catalog" className="text-blue-600 hover:text-blue-700">
-            Continuar explorando el catálogo
+            {t('buttons.continue','Continuar explorando el catálogo')}
           </Link>
         </div>
       </div>

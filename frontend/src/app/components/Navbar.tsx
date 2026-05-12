@@ -3,8 +3,10 @@ import { Search, ShoppingCart, User, LogOut, BookOpen, GraduationCap, Package } 
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export function Navbar() {
+  const { t } = useTranslation();
   const { user, logout } = useAuth();
   const { totalItems } = useCart();
   const navigate = useNavigate();
@@ -51,13 +53,13 @@ export function Navbar() {
           {/* Navigation Links */}
           <div className="hidden md:flex items-center space-x-8 ml-12">
             <Link to="/catalog?type=course" className="text-gray-700 hover:text-gray-900">
-              Cursos
+              {t('navbar.courses')}
             </Link>
             <Link to="/catalog?type=book" className="text-gray-700 hover:text-gray-900">
-              Libros
+              {t('navbar.books')}
             </Link>
             <Link to="/catalog" className="text-gray-700 hover:text-gray-900">
-              Explorar
+              {t('navbar.explore')}
             </Link>
           </div>
 
@@ -67,7 +69,7 @@ export function Navbar() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Buscar cursos y libros..."
+                placeholder={t('search.placeholder', 'Buscar...')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -116,7 +118,7 @@ export function Navbar() {
                         onClick={() => setShowUserMenu(false)}
                       >
                         <User className="w-4 h-4" />
-                        <span>Mi Perfil</span>
+                        <span>{t('navbar.myProfile')}</span>
                       </Link>
                       <Link
                         to="/dashboard/courses"
@@ -124,7 +126,7 @@ export function Navbar() {
                         onClick={() => setShowUserMenu(false)}
                       >
                         <GraduationCap className="w-4 h-4" />
-                        <span>Mis Cursos</span>
+                        <span>{t('navbar.courses','Mis Cursos')}</span>
                       </Link>
                       <Link
                         to="/dashboard/books"
@@ -132,7 +134,7 @@ export function Navbar() {
                         onClick={() => setShowUserMenu(false)}
                       >
                         <BookOpen className="w-4 h-4" />
-                        <span>Mis Libros</span>
+                        <span>{t('navbar.books','Mis Libros')}</span>
                       </Link>
                       <Link
                         to="/dashboard/orders"
@@ -140,14 +142,14 @@ export function Navbar() {
                         onClick={() => setShowUserMenu(false)}
                       >
                         <Package className="w-4 h-4" />
-                        <span>Mis Órdenes</span>
+                        <span>{t('navbar.myOrders')}</span>
                       </Link>
                       <button
                         onClick={handleLogout}
                         className="flex items-center space-x-2 w-full px-4 py-2 text-red-600 hover:bg-gray-100"
                       >
                         <LogOut className="w-4 h-4" />
-                        <span>Cerrar sesión</span>
+                        <span>{t('navbar.logout','Cerrar sesión')}</span>
                       </button>
                     </div>
                   )}
@@ -167,13 +169,13 @@ export function Navbar() {
                   to="/login"
                   className="px-4 py-2 text-gray-700 hover:text-gray-900"
                 >
-                  Iniciar sesión
+                  {t('navbar.login')}
                 </Link>
                 <Link
                   to="/register"
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                 >
-                  Registrarse
+                  {t('buttons.continue')}
                 </Link>
               </>
             )}

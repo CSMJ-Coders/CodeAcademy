@@ -18,6 +18,7 @@ from django.db import models
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.conf import settings
+from django.utils.translation import gettext_lazy as _
 
 
 class Category(models.Model):
@@ -33,8 +34,8 @@ class Category(models.Model):
     icon = models.CharField(max_length=50, default="code-2")
 
     class Meta:
-        verbose_name = "Categoría"
-        verbose_name_plural = "Categorías"
+        verbose_name = _("Categoría")
+        verbose_name_plural = _("Categorías")
         ordering = ["name"]  # ordenadas alfabéticamente
 
     def __str__(self):
@@ -55,24 +56,24 @@ class Product(models.Model):
     TYPE_COURSE = "course"
     TYPE_BOOK = "book"
     TYPE_CHOICES = [
-        (TYPE_COURSE, "Curso"),
-        (TYPE_BOOK, "Libro"),
+        (TYPE_COURSE, _("Curso")),
+        (TYPE_BOOK, _("Libro")),
     ]
 
     LEVEL_BEGINNER = "beginner"
     LEVEL_INTERMEDIATE = "intermediate"
     LEVEL_ADVANCED = "advanced"
     LEVEL_CHOICES = [
-        (LEVEL_BEGINNER, "Principiante"),
-        (LEVEL_INTERMEDIATE, "Intermedio"),
-        (LEVEL_ADVANCED, "Avanzado"),
+        (LEVEL_BEGINNER, _("Principiante")),
+        (LEVEL_INTERMEDIATE, _("Intermedio")),
+        (LEVEL_ADVANCED, _("Avanzado")),
     ]
 
     LANGUAGE_SPANISH = "spanish"
     LANGUAGE_ENGLISH = "english"
     LANGUAGE_CHOICES = [
-        (LANGUAGE_SPANISH, "Español"),
-        (LANGUAGE_ENGLISH, "Inglés"),
+        (LANGUAGE_SPANISH, _("Español")),
+        (LANGUAGE_ENGLISH, _("Inglés")),
     ]
 
     # ── Campos comunes (cursos y libros) ───────────────────────────────────
@@ -133,8 +134,8 @@ class Product(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        verbose_name = "Producto"
-        verbose_name_plural = "Productos"
+        verbose_name = _("Producto")
+        verbose_name_plural = _("Productos")
         # Primero los destacados, luego los más recientes
         ordering = ["-is_featured", "-created_at"]
         indexes = [
@@ -148,11 +149,11 @@ class Product(models.Model):
 
     def clean(self):
         if self.type == self.TYPE_COURSE and self.pages:
-            raise ValidationError("Un curso no puede tener páginas.")
+            raise ValidationError(_("Un curso no puede tener páginas."))
         if self.type == self.TYPE_BOOK and self.duration:
-            raise ValidationError("Un libro no puede tener duración.")
+            raise ValidationError(_("Un libro no puede tener duración."))
         if self.type == self.TYPE_BOOK and not self.book_file:
-            raise ValidationError("Un libro debe tener archivo PDF.")
+            raise ValidationError(_("Un libro debe tener archivo PDF."))
 
 
 class Chapter(models.Model):
@@ -177,8 +178,8 @@ class Chapter(models.Model):
     is_preview = models.BooleanField(default=False)
 
     class Meta:
-        verbose_name = "Capítulo"
-        verbose_name_plural = "Capítulos"
+        verbose_name = _("Capítulo")
+        verbose_name_plural = _("Capítulos")
         ordering = ["order"]  # siempre en orden ascendente
 
     def __str__(self):
@@ -203,8 +204,8 @@ class TableOfContentsEntry(models.Model):
     is_preview = models.BooleanField(default=False)
 
     class Meta:
-        verbose_name = "Entrada de índice"
-        verbose_name_plural = "Entradas de índice"
+        verbose_name = _("Entrada de índice")
+        verbose_name_plural = _("Entradas de índice")
         ordering = ["order"]
 
     def __str__(self):
@@ -230,8 +231,8 @@ class BookDownload(models.Model):
 
     class Meta:
         unique_together = ("user", "product")
-        verbose_name = "Descarga de libro"
-        verbose_name_plural = "Descargas de libros"
+        verbose_name = _("Descarga de libro")
+        verbose_name_plural = _("Descargas de libros")
 
     def __str__(self):
         return f"{self.user_id} - {self.product_id} ({self.download_count}/{self.max_downloads})"
@@ -267,8 +268,8 @@ class CourseProgress(models.Model):
 
     class Meta:
         unique_together = ("user", "product")
-        verbose_name = "Progreso de curso"
-        verbose_name_plural = "Progresos de cursos"
+        verbose_name = _("Progreso de curso")
+        verbose_name_plural = _("Progresos de cursos")
 
     def recalculate_progress(self):
         total = self.product.chapters.count()

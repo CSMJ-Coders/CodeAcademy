@@ -1,4 +1,5 @@
 import { Link } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { useState, useEffect } from 'react';
 import { ArrowRight, Code2, Globe, Brain, Server, Database, Smartphone, CheckCircle2, Download, Languages, Zap } from 'lucide-react';
 import { ProductCard } from '../components/ProductCard';
@@ -15,6 +16,7 @@ const iconMap: Record<string, any> = {
 };
 
 export function Home() {
+  const { t } = useTranslation();
   // Estado para los datos que vienen del backend
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -61,24 +63,24 @@ export function Home() {
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
               <h1 className="text-5xl font-bold text-gray-900 mb-6 leading-tight">
-                Aprende Programación con Cursos y Libros Especializados
+                {t('home.heroTitle')}
               </h1>
               <p className="text-xl text-gray-600 mb-8">
-                Accede a contenido de calidad creado por expertos. Cursos interactivos y libros técnicos para impulsar tu carrera en tecnología.
+                {t('home.heroSubtitle')}
               </p>
               <div className="flex flex-wrap gap-4">
                 <Link
                   to="/catalog?type=course"
                   className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2"
                 >
-                  <span>Explorar Cursos</span>
+                  <span>{t('home.exploreCourses')}</span>
                   <ArrowRight className="w-4 h-4" />
                 </Link>
                 <Link
                   to="/catalog?type=book"
                   className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center space-x-2"
                 >
-                  <span>Ver Libros</span>
+                  <span>{t('home.seeBooks')}</span>
                   <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>

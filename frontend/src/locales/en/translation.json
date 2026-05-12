@@ -1,0 +1,72 @@
+{
+  "navbar": {
+    "home": "Home",
+    "catalog": "Catalog",
+    "myOrders": "My Orders",
+    "login": "Log in",
+    "logout": "Log out",
+    "myProfile": "My Profile",
+    "courses": "Courses",
+    "books": "Books",
+    "explore": "Explore"
+  },
+  "home": {
+    "heroTitle": "Learn Programming with Specialized Courses and Books",
+    "heroSubtitle": "Access quality content created by experts. Interactive courses and technical books to boost your tech career.",
+    "exploreCourses": "Explore Courses",
+    "seeBooks": "See Books"
+  },
+  "buttons": {
+    "buy": "Buy",
+    "addToCart": "Add to cart",
+    "checkout": "Checkout",
+    "continue": "Continue",
+    "viewCourses": "View My Courses",
+    "viewBooks": "View My Books"
+  },
+  "login": {
+    "email": "Email",
+    "password": "Password",
+    "submit": "Sign in"
+  },
+  "messages": {
+    "noOrders": "You have no orders yet.",
+    "ordersInfo": "Your purchases will appear here",
+    "orderNotFound": "Order not found"
+  },
+  "search": {
+    "placeholder": "Search courses and books..."
+  },
+  "words": {
+    "order": "order",
+    "orders": "orders",
+    "product": "product",
+    "products": "products",
+    "course": "Course",
+    "book": "Book"
+  },
+  "order": {
+    "successTitle": "Purchase Successful!",
+    "successMessage": "Your order has been processed successfully",
+    "orderNumber": "Order",
+    "completed": "Completed",
+    "products": "Purchased Products",
+    "nextSteps": "Next Steps",
+    "next1": "Your products are available in your account",
+    "next2": "You can access your courses and books anytime",
+    "next3": "Books are ready to download (3 downloads per book)"
+  },
+  "footer": {
+    "description": "The best platform to learn programming with courses and books.",
+    "platform": "Platform",
+    "support": "Support",
+    "helpCenter": "Help Center",
+    "contact": "Contact",
+    "faq": "FAQ",
+    "legal": "Legal",
+    "terms": "Terms and Conditions",
+    "privacy": "Privacy Policy",
+    "cookies": "Cookies Policy",
+    "copyright": "© 2026 Code Academy. All rights reserved."
+  }
+}

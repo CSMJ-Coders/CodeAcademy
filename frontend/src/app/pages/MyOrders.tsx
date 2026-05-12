@@ -3,8 +3,10 @@ import { Package, Calendar, DollarSign, Eye } from 'lucide-react';
 import { fetchMyOrders } from '../services/api';
 import type { Order } from '../types';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
+import { useTranslation } from 'react-i18next';
 
 export function MyOrders() {
+  const { t, i18n } = useTranslation();
   const [orders, setOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -32,8 +34,8 @@ export function MyOrders() {
       <div className="bg-white rounded-lg border border-gray-200 p-12">
         <div className="text-center">
           <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-gray-900 mb-2">No tienes órdenes aún</h2>
-          <p className="text-gray-600">Tus compras aparecerán aquí</p>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">{t('messages.noOrders')}</h2>
+          <p className="text-gray-600">{t('messages.ordersInfo', 'Tus compras aparecerán aquí')}</p>
         </div>
       </div>
     );
@@ -69,9 +71,9 @@ export function MyOrders() {
 
   return (
     <div className="bg-white rounded-lg border border-gray-200">
-      <div className="p-6 border-b border-gray-200">
-        <h1 className="text-2xl font-bold text-gray-900">Mis Órdenes</h1>
-        <p className="text-gray-600 mt-1">{orders.length} {orders.length === 1 ? 'orden' : 'órdenes'}</p>
+        <div className="p-6 border-b border-gray-200">
+        <h1 className="text-2xl font-bold text-gray-900">{t('navbar.myOrders')}</h1>
+        <p className="text-gray-600 mt-1">{orders.length} {orders.length === 1 ? t('words.order','orden') : t('words.orders','órdenes')}</p>
       </div>
 
       <div className="overflow-x-auto">
@@ -108,7 +110,7 @@ export function MyOrders() {
                   <div className="flex items-center space-x-2 text-sm text-gray-600">
                     <Calendar className="w-4 h-4" />
                     <span>
-                      {new Date(order.date).toLocaleDateString('es-ES', {
+                      {new Date(order.date).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'es-ES', {
                         year: 'numeric',
                         month: 'short',
                         day: 'numeric'
@@ -118,7 +120,7 @@ export function MyOrders() {
                 </td>
                 <td className="px-6 py-4">
                   <div className="text-sm text-gray-900">
-                    {order.items.length} {order.items.length === 1 ? 'producto' : 'productos'}
+                    {order.items.length} {order.items.length === 1 ? t('words.product','producto') : t('words.products','productos')}
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -138,7 +140,7 @@ export function MyOrders() {
                     className="text-blue-600 hover:text-blue-700 flex items-center space-x-1"
                   >
                     <Eye className="w-4 h-4" />
-                    <span>Ver Detalle</span>
+                    <span>{t('buttons.continue', 'Ver Detalle')}</span>
                   </button>
                 </td>
               </tr>
