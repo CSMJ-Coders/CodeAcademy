@@ -139,6 +139,24 @@ jobs:
         npm ci
         npx playwright install
 
+    - name: Create .env for CI
+      run: |
+        cat > .env << 'EOF'
+        DJANGO_SECRET_KEY=ci-test-secret-key-not-for-production
+        DJANGO_DEBUG=True
+        DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1
+        DB_NAME=codeacademy
+        DB_USER=postgres
+        DB_PASSWORD=postgres
+        DB_HOST=db
+        DB_PORT=5432
+        CORS_ALLOWED_ORIGINS=http://localhost:5173
+        STRIPE_SECRET_KEY=sk_test_dummy
+        STRIPE_PUBLISHABLE_KEY=pk_test_dummy
+        STRIPE_WEBHOOK_SECRET=whsec_dummy
+        STRIPE_CURRENCY=usd
+        EOF
+
     - name: Start services with Docker Compose
       run: |
         docker compose up -d
@@ -194,6 +212,24 @@ jobs:
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
+
+    - name: Create .env for CI
+      run: |
+        cat > .env << 'EOF'
+        DJANGO_SECRET_KEY=ci-test-secret-key-not-for-production
+        DJANGO_DEBUG=True
+        DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1
+        DB_NAME=codeacademy
+        DB_USER=postgres
+        DB_PASSWORD=postgres
+        DB_HOST=db
+        DB_PORT=5432
+        CORS_ALLOWED_ORIGINS=http://localhost:5173
+        STRIPE_SECRET_KEY=sk_test_dummy
+        STRIPE_PUBLISHABLE_KEY=pk_test_dummy
+        STRIPE_WEBHOOK_SECRET=whsec_dummy
+        STRIPE_CURRENCY=usd
+        EOF
 
     - name: Build Docker images
       run: |
