@@ -12,6 +12,7 @@ export function Navbar() {
   const navigate = useNavigate();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [exchangeRate, setExchangeRate] = useState<number | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -22,6 +23,13 @@ export function Navbar() {
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    fetch('https://api.exchangerate-api.com/v4/latest/USD')
+      .then(res => res.json())
+      .then(data => setExchangeRate(data.rates?.COP ?? null))
+      .catch(() => {});
   }, []);
 
   const handleLogout = () => {
@@ -61,6 +69,11 @@ export function Navbar() {
             <Link to="/catalog" className="text-gray-700 hover:text-gray-900">
               {t('navbar.explore')}
             </Link>
+            {exchangeRate && (
+              <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full whitespace-nowrap">
+                1 USD = {exchangeRate.toLocaleString('es-CO', { maximumFractionDigits: 0 })} COP
+              </span>
+            )}
           </div>
 
           {/* Search Bar */}
