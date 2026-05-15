@@ -46,3 +46,9 @@ frontend/dist/
 # Docker
 # ============================================
 # No ignorar docker files, los necesitamos
+
+# ============================================
+# Archivos locales / Entregables
+# ============================================
+Entregable 2 - Base.pdf
+
