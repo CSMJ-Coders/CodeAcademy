@@ -35,4 +35,4 @@ RUN chmod +x /app/entrypoint.sh
 
 WORKDIR /app/app
 
-CMD ["/app/entrypoint.sh"]
+CMD ["sh", "/app/entrypoint.sh"]
