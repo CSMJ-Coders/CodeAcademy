@@ -49,7 +49,7 @@ export function Home() {
       <div className="min-h-screen pt-32 flex items-center justify-center">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-500">Cargando contenido...</p>
+          <p className="text-gray-500">{t('home.loading')}</p>
         </div>
       </div>
     );
@@ -100,8 +100,8 @@ export function Home() {
       <section className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Explora por Categoría</h2>
-            <p className="text-gray-600">Encuentra el contenido perfecto para tu objetivo de aprendizaje</p>
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">{t('home.categoriesTitle')}</h2>
+            <p className="text-gray-600">{t('home.categoriesSubtitle')}</p>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -128,8 +128,8 @@ export function Home() {
       <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Productos Destacados</h2>
-            <p className="text-gray-600">Los cursos y libros más populares de nuestra plataforma</p>
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">{t('home.featuredTitle')}</h2>
+            <p className="text-gray-600">{t('home.featuredSubtitle')}</p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
@@ -143,7 +143,7 @@ export function Home() {
               to="/catalog"
               className="inline-flex items-center space-x-2 text-blue-600 hover:text-blue-700"
             >
-              <span>Ver todo el catálogo</span>
+              <span>{t('home.viewAllCatalog')}</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
@@ -154,8 +154,8 @@ export function Home() {
       <section className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">¿Por qué Code Academy?</h2>
-            <p className="text-gray-600">Beneficios que te ayudarán a alcanzar tus metas</p>
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">{t('home.whyTitle')}</h2>
+            <p className="text-gray-600">{t('home.whySubtitle')}</p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -163,9 +163,9 @@ export function Home() {
               <div className="w-16 h-16 mx-auto mb-4 bg-blue-50 rounded-full flex items-center justify-center">
                 <Zap className="w-8 h-8 text-blue-600" />
               </div>
-              <h3 className="font-semibold text-gray-900 mb-2">Acceso Inmediato</h3>
+              <h3 className="font-semibold text-gray-900 mb-2">{t('home.benefit1Title')}</h3>
               <p className="text-gray-600 text-sm">
-                Comienza a aprender al instante después de tu compra
+                {t('home.benefit1Desc')}
               </p>
             </div>
 
@@ -173,9 +173,9 @@ export function Home() {
               <div className="w-16 h-16 mx-auto mb-4 bg-blue-50 rounded-full flex items-center justify-center">
                 <CheckCircle2 className="w-8 h-8 text-blue-600" />
               </div>
-              <h3 className="font-semibold text-gray-900 mb-2">Contenido Especializado</h3>
+              <h3 className="font-semibold text-gray-900 mb-2">{t('home.benefit2Title')}</h3>
               <p className="text-gray-600 text-sm">
-                Material creado por expertos de la industria
+                {t('home.benefit2Desc')}
               </p>
             </div>
 
@@ -183,9 +183,9 @@ export function Home() {
               <div className="w-16 h-16 mx-auto mb-4 bg-blue-50 rounded-full flex items-center justify-center">
                 <Download className="w-8 h-8 text-blue-600" />
               </div>
-              <h3 className="font-semibold text-gray-900 mb-2">Descargas Seguras</h3>
+              <h3 className="font-semibold text-gray-900 mb-2">{t('home.benefit3Title')}</h3>
               <p className="text-gray-600 text-sm">
-                Descarga tus libros de forma segura y confiable
+                {t('home.benefit3Desc')}
               </p>
             </div>
 
@@ -193,9 +193,9 @@ export function Home() {
               <div className="w-16 h-16 mx-auto mb-4 bg-blue-50 rounded-full flex items-center justify-center">
                 <Languages className="w-8 h-8 text-blue-600" />
               </div>
-              <h3 className="font-semibold text-gray-900 mb-2">Múltiples Idiomas</h3>
+              <h3 className="font-semibold text-gray-900 mb-2">{t('home.benefit4Title')}</h3>
               <p className="text-gray-600 text-sm">
-                Contenido disponible en español e inglés
+                {t('home.benefit4Desc')}
               </p>
             </div>
           </div>
@@ -206,16 +206,16 @@ export function Home() {
       <section className="py-20 bg-blue-600">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold text-white mb-4">
-            ¿Listo para comenzar tu viaje de aprendizaje?
+            {t('home.ctaTitle')}
           </h2>
           <p className="text-blue-100 mb-8 text-lg">
-            Únete a miles de desarrolladores que ya están mejorando sus habilidades
+            {t('home.ctaSubtitle')}
           </p>
           <Link
             to="/catalog"
             className="inline-flex items-center space-x-2 px-8 py-4 bg-white text-blue-600 rounded-lg hover:bg-gray-100 font-medium"
           >
-            <span>Explorar Catálogo</span>
+            <span>{t('home.exploreCatalog')}</span>
             <ArrowRight className="w-5 h-5" />
           </Link>
         </div>

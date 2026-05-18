@@ -1,14 +1,16 @@
 import { Link, Outlet, useLocation } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { User, GraduationCap, BookOpen, Package } from 'lucide-react';
 
 export function Dashboard() {
+  const { t } = useTranslation();
   const location = useLocation();
 
   const navItems = [
-    { path: '/dashboard/profile', label: 'Mi Perfil', icon: User },
-    { path: '/dashboard/courses', label: 'Mis Cursos', icon: GraduationCap },
-    { path: '/dashboard/books', label: 'Mis Libros', icon: BookOpen },
-    { path: '/dashboard/orders', label: 'Mis Órdenes', icon: Package },
+    { path: '/dashboard/profile', label: t('dashboard.profile'), icon: User },
+    { path: '/dashboard/courses', label: t('dashboard.myCourses'), icon: GraduationCap },
+    { path: '/dashboard/books', label: t('dashboard.myBooks'), icon: BookOpen },
+    { path: '/dashboard/orders', label: t('dashboard.myOrders'), icon: Package },
   ];
 
   return (
@@ -18,7 +20,7 @@ export function Dashboard() {
           {/* Sidebar */}
           <aside className="w-64 flex-shrink-0">
             <div className="bg-white rounded-lg border border-gray-200 p-4 sticky top-24">
-              <h2 className="font-semibold text-gray-900 mb-4 px-2">Mi Cuenta</h2>
+              <h2 className="font-semibold text-gray-900 mb-4 px-2">{t('errors.myAccount')}</h2>
               <nav className="space-y-1">
                 {navItems.map(item => {
                   const Icon = item.icon;

@@ -1,4 +1,5 @@
 import { Link } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { BookOpen, GraduationCap, Star, Clock, FileText } from 'lucide-react';
 import type { Product } from '../types';
 
@@ -18,6 +19,7 @@ const FALLBACK_PRODUCT_IMAGE =
   );
 
 export function ProductCard({ product }: ProductCardProps) {
+  const { t } = useTranslation();
   const Icon = product.type === 'course' ? GraduationCap : BookOpen;
 
   return (
@@ -37,12 +39,12 @@ export function ProductCard({ product }: ProductCardProps) {
         />
         {product.isNew && (
           <span className="absolute top-3 left-3 px-2 py-1 bg-green-500 text-white text-xs font-medium rounded">
-            Nuevo
+            {t('words.new')}
           </span>
         )}
         {product.originalPrice && (
           <span className="absolute top-3 left-3 px-2 py-1 bg-red-500 text-white text-xs font-medium rounded">
-            Oferta
+            {t('words.offer')}
           </span>
         )}
       </div>
@@ -53,10 +55,10 @@ export function ProductCard({ product }: ProductCardProps) {
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center space-x-1 text-blue-600">
             <Icon className="w-4 h-4" />
-            <span className="text-xs font-medium capitalize">{product.type === 'course' ? 'Curso' : 'Libro'}</span>
+            <span className="text-xs font-medium capitalize">{t(`words.${product.type}`)}</span>
           </div>
           <span className="text-xs text-gray-500 capitalize">
-            {product.level === 'beginner' ? 'Básico' : product.level === 'intermediate' ? 'Intermedio' : 'Avanzado'}
+            {t(`words.${product.level === 'beginner' ? 'basic' : product.level === 'intermediate' ? 'intermediate' : 'advanced'}`)}
           </span>
         </div>
 
@@ -83,7 +85,7 @@ export function ProductCard({ product }: ProductCardProps) {
           {product.type === 'book' && product.pages && (
             <div className="flex items-center space-x-1">
               <FileText className="w-3 h-3" />
-              <span>{product.pages} págs</span>
+              <span>{product.pages} {t('words.pages')}</span>
             </div>
           )}
         </div>

@@ -1,4 +1,5 @@
 import { Link } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { BookOpen, Download, Eye, FileText } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -7,6 +8,7 @@ import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import type { Product } from '../types';
 
 export function MyBooks() {
+  const { t } = useTranslation();
   const { purchasedProducts } = useAuth();
   const [myBooks, setMyBooks] = useState<Product[]>([]);
   const [downloadMap, setDownloadMap] = useState<Record<string, { downloadsRemaining: number; maxDownloads: number }>>({});
@@ -60,7 +62,7 @@ export function MyBooks() {
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-12">
         <div className="text-center">
-          <p className="text-gray-600">Cargando libros...</p>
+          <p className="text-gray-600">{t('myBooks.loading')}</p>
         </div>
       </div>
     );
@@ -71,13 +73,13 @@ export function MyBooks() {
       <div className="bg-white rounded-lg border border-gray-200 p-12">
         <div className="text-center">
           <BookOpen className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-gray-900 mb-2">No tienes libros aún</h2>
-          <p className="text-gray-600 mb-6">Explora nuestro catálogo y comienza a leer</p>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">{t('messages.noBooks')}</h2>
+          <p className="text-gray-600 mb-6">{t('messages.exploreCatalog')}</p>
           <Link
             to="/catalog?type=book"
             className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
-            Explorar Libros
+            {t('navbar.books')}
           </Link>
         </div>
       </div>
@@ -87,8 +89,8 @@ export function MyBooks() {
   return (
     <div className="bg-white rounded-lg border border-gray-200">
       <div className="p-6 border-b border-gray-200">
-        <h1 className="text-2xl font-bold text-gray-900">Mis Libros</h1>
-        <p className="text-gray-600 mt-1">{myBooks.length} {myBooks.length === 1 ? 'libro' : 'libros'}</p>
+        <h1 className="text-2xl font-bold text-gray-900">{t('myBooks.title')}</h1>
+        <p className="text-gray-600 mt-1">{myBooks.length} {myBooks.length === 1 ? t('myBooks.book') : t('myBooks.books')}</p>
       </div>
 
       <div className="p-6">
@@ -114,17 +116,17 @@ export function MyBooks() {
                   <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
                     <div className="flex items-center space-x-1">
                       <FileText className="w-3 h-3" />
-                      <span>{book.pages} páginas</span>
+                      <span>{book.pages} {t('words.pages')}</span>
                     </div>
                     <span className="capitalize">
-                      {book.level === 'beginner' ? 'Básico' : book.level === 'intermediate' ? 'Intermedio' : 'Avanzado'}
+                      {t(`words.${book.level === 'beginner' ? 'basic' : book.level === 'intermediate' ? 'intermediate' : 'advanced'}`)}
                     </span>
                   </div>
 
                   {/* Downloads Remaining */}
                   <div className="mb-4 p-2 bg-gray-50 rounded-lg">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-gray-600">Descargas restantes:</span>
+                      <span className="text-gray-600">{t('myBooks.downloadsRemaining')}</span>
                       <span className={`font-medium ${
                         downloads.downloadsRemaining > 0 ? 'text-green-600' : 'text-red-600'
                       }`}>
@@ -140,7 +142,7 @@ export function MyBooks() {
                       className="block w-full px-4 py-2 bg-blue-600 text-white text-center rounded-lg hover:bg-blue-700 flex items-center justify-center space-x-2"
                     >
                       <Eye className="w-4 h-4" />
-                      <span>Leer en Línea</span>
+                      <span>{t('buttons.readOnline')}</span>
                     </Link>
                     <button
                       onClick={() => handleDownload(book.id)}
@@ -148,7 +150,7 @@ export function MyBooks() {
                       className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Download className="w-4 h-4" />
-                      <span>Descargar PDF</span>
+                      <span>{t('buttons.download')}</span>
                     </button>
                   </div>
                 </div>

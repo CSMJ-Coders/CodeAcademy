@@ -74,7 +74,15 @@ class ProductListView(generics.ListAPIView):
         filters.OrderingFilter,
     ]
     filterset_class = ProductFilterSet
-    search_fields = ["title", "author", "description"]
+    search_fields = [
+        "title",
+        "title_es",
+        "title_en",
+        "author",
+        "description",
+        "description_es",
+        "description_en",
+    ]
     ordering_fields = ["price", "rating", "created_at"]
     ordering = ["-is_featured", "-created_at"]
 
