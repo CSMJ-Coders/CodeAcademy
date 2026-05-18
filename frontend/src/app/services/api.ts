@@ -153,12 +153,15 @@ function resolveProductImageUrl(image: string): string {
 }
 
 async function fetchApiWithOptionalAuth(url: string, init: RequestInit = {}): Promise<Response> {
+  const lang = localStorage.getItem('i18nextLng') || 'es';
+  const langHeader = { ...(init.headers || {}), 'Accept-Language': lang } as HeadersInit;
+
   const access = localStorage.getItem(ACCESS_TOKEN_KEY);
   if (!access) {
-    return fetch(url, init);
+    return fetch(url, { ...init, headers: langHeader });
   }
 
-  const response = await fetchWithAuthRetry(url, init, Boolean(init.body));
+  const response = await fetchWithAuthRetry(url, { ...init, headers: langHeader }, Boolean(init.body));
   return response;
 }
 
@@ -355,7 +358,7 @@ export interface ProductFilters {
  * Retorna todas las categorías (sin paginación).
  */
 export async function fetchCategories(): Promise<Category[]> {
-  const res = await fetch('/api/categories/');
+  const res = await fetchApiWithOptionalAuth('/api/categories/');
   if (!res.ok) throw new Error('Error al cargar categorías');
   const data: ApiCategory[] = await res.json();
   return data.map(mapCategory);
@@ -381,7 +384,7 @@ export async function fetchProducts(filters: ProductFilters = {}): Promise<Produ
   // page_size=100 para traer todos sin necesidad de paginación en el frontend
   params.set('page_size', '100');
 
-  const res = await fetch(`/api/products/?${params.toString()}`);
+  const res = await fetchApiWithOptionalAuth(`/api/products/?${params.toString()}`);
   if (!res.ok) throw new Error('Error al cargar productos');
 
   const data: PaginatedResponse<ApiProduct> = await res.json();
@@ -394,7 +397,7 @@ export async function fetchProducts(filters: ProductFilters = {}): Promise<Produ
  * Retorna null si el producto no existe (404).
  */
 export async function fetchProductById(id: string): Promise<Product | null> {
-  const res = await fetch(`/api/products/${id}/`);
+  const res = await fetchApiWithOptionalAuth(`/api/products/${id}/`);
   if (res.status === 404) return null;
   if (!res.ok) throw new Error('Error al cargar el producto');
   const data: ApiProduct = await res.json();

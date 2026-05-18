@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router';
 import { ProductCard } from '../components/ProductCard';
 import { fetchProducts, fetchCategories } from '../services/api';
@@ -6,6 +7,7 @@ import { SlidersHorizontal } from 'lucide-react';
 import type { Product, Category, ProductType, Level, Language } from '../types';
 
 export function Catalog() {
+  const { t /*, i18n */ } = useTranslation();
   const [searchParams] = useSearchParams();
   const [showFilters, setShowFilters] = useState(true);
 
@@ -14,7 +16,9 @@ export function Catalog() {
     (searchParams.get('type') as ProductType) || 'all'
   );
   const [selectedLevel, setSelectedLevel] = useState<Level | 'all'>('all');
-  const [selectedLanguage, setSelectedLanguage] = useState<Language | 'all'>('all');
+  const [selectedLanguage, setSelectedLanguage] = useState<Language | 'all'>(
+    (searchParams.get('language') as Language) || 'all'
+  );
   const [selectedCategory, setSelectedCategory] = useState<string>(
     searchParams.get('category') || 'all'
   );
@@ -25,6 +29,24 @@ export function Catalog() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Sincronizar filtros con los query params cuando la URL cambia
+  useEffect(() => {
+    const qpType = (searchParams.get('type') as ProductType) || 'all';
+    if (qpType !== selectedType) setSelectedType(qpType);
+
+    const qpLevel = (searchParams.get('level') as Level) || 'all';
+    if (qpLevel !== selectedLevel) setSelectedLevel(qpLevel);
+
+    const qpLanguage = (searchParams.get('language') as Language) || 'all';
+    if (qpLanguage !== selectedLanguage) setSelectedLanguage(qpLanguage);
+
+    const qpCategory = searchParams.get('category') || 'all';
+    if (qpCategory !== selectedCategory) setSelectedCategory(qpCategory);
+
+    const qpSearch = searchParams.get('search') || '';
+    if (qpSearch !== searchQuery) setSearchQuery(qpSearch);
+  }, [searchParams]);
 
   // Carga las categorías una sola vez al montar el componente
   useEffect(() => {
@@ -71,11 +93,11 @@ export function Catalog() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Catálogo de Productos</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('catalog.title')}</h1>
           <p className="text-gray-600">
             {loading
-              ? 'Buscando productos...'
-              : `${filteredProducts.length} ${filteredProducts.length === 1 ? 'producto encontrado' : 'productos encontrados'}`
+              ? t('search.searching')
+              : `${filteredProducts.length} ${filteredProducts.length === 1 ? t('messages.searchResults') : t('messages.searchResultsPlural')}`
             }
           </p>
         </div>
@@ -87,19 +109,19 @@ export function Catalog() {
               <div className="flex items-center justify-between mb-6">
                 <h2 className="font-semibold text-gray-900 flex items-center space-x-2">
                   <SlidersHorizontal className="w-4 h-4" />
-                  <span>Filtros</span>
+                  <span>{t('catalog.filters')}</span>
                 </h2>
                 <button
                   onClick={clearFilters}
                   className="text-sm text-blue-600 hover:text-blue-700"
                 >
-                  Limpiar
+                  {t('catalog.clear')}
                 </button>
               </div>
 
               {/* Type Filter */}
               <div className="mb-6">
-                <h3 className="font-medium text-gray-900 mb-3">Tipo</h3>
+                <h3 className="font-medium text-gray-900 mb-3">{t('catalog.type')}</h3>
                 <div className="space-y-2">
                   <label className="flex items-center">
                     <input
@@ -109,34 +131,14 @@ export function Catalog() {
                       onChange={() => setSelectedType('all')}
                       className="mr-2"
                     />
-                    <span className="text-sm text-gray-700">Todos</span>
-                  </label>
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="type"
-                      checked={selectedType === 'course'}
-                      onChange={() => setSelectedType('course')}
-                      className="mr-2"
-                    />
-                    <span className="text-sm text-gray-700">Cursos</span>
-                  </label>
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="type"
-                      checked={selectedType === 'book'}
-                      onChange={() => setSelectedType('book')}
-                      className="mr-2"
-                    />
-                    <span className="text-sm text-gray-700">Libros</span>
+                <span className="text-sm text-gray-700">{t('errors.all')}</span>
                   </label>
                 </div>
               </div>
 
               {/* Level Filter */}
               <div className="mb-6 pb-6 border-b border-gray-200">
-                <h3 className="font-medium text-gray-900 mb-3">Nivel</h3>
+                <h3 className="font-medium text-gray-900 mb-3">{t('catalog.level')}</h3>
                 <div className="space-y-2">
                   <label className="flex items-center">
                     <input
@@ -146,7 +148,7 @@ export function Catalog() {
                       onChange={() => setSelectedLevel('all')}
                       className="mr-2"
                     />
-                    <span className="text-sm text-gray-700">Todos</span>
+                    <span className="text-sm text-gray-700">{t('errors.all')}</span>
                   </label>
                   <label className="flex items-center">
                     <input
@@ -156,7 +158,7 @@ export function Catalog() {
                       onChange={() => setSelectedLevel('beginner')}
                       className="mr-2"
                     />
-                    <span className="text-sm text-gray-700">Básico</span>
+                    <span className="text-sm text-gray-700">{t('words.basic')}</span>
                   </label>
                   <label className="flex items-center">
                     <input
@@ -166,7 +168,7 @@ export function Catalog() {
                       onChange={() => setSelectedLevel('intermediate')}
                       className="mr-2"
                     />
-                    <span className="text-sm text-gray-700">Intermedio</span>
+                    <span className="text-sm text-gray-700">{t('words.intermediate')}</span>
                   </label>
                   <label className="flex items-center">
                     <input
@@ -176,14 +178,14 @@ export function Catalog() {
                       onChange={() => setSelectedLevel('advanced')}
                       className="mr-2"
                     />
-                    <span className="text-sm text-gray-700">Avanzado</span>
+                    <span className="text-sm text-gray-700">{t('words.advanced')}</span>
                   </label>
                 </div>
               </div>
 
               {/* Language Filter */}
               <div className="mb-6 pb-6 border-b border-gray-200">
-                <h3 className="font-medium text-gray-900 mb-3">Idioma</h3>
+                <h3 className="font-medium text-gray-900 mb-3">{t('catalog.language')}</h3>
                 <div className="space-y-2">
                   <label className="flex items-center">
                     <input
@@ -193,7 +195,7 @@ export function Catalog() {
                       onChange={() => setSelectedLanguage('all')}
                       className="mr-2"
                     />
-                    <span className="text-sm text-gray-700">Todos</span>
+                    <span className="text-sm text-gray-700">{t('errors.all')}</span>
                   </label>
                   <label className="flex items-center">
                     <input
@@ -203,7 +205,7 @@ export function Catalog() {
                       onChange={() => setSelectedLanguage('spanish')}
                       className="mr-2"
                     />
-                    <span className="text-sm text-gray-700">Español</span>
+                    <span className="text-sm text-gray-700">{t('errors.spanish')}</span>
                   </label>
                   <label className="flex items-center">
                     <input
@@ -213,14 +215,14 @@ export function Catalog() {
                       onChange={() => setSelectedLanguage('english')}
                       className="mr-2"
                     />
-                    <span className="text-sm text-gray-700">Inglés</span>
+                    <span className="text-sm text-gray-700">{t('errors.english')}</span>
                   </label>
                 </div>
               </div>
 
               {/* Category Filter */}
               <div className="mb-6 pb-6 border-b border-gray-200">
-                <h3 className="font-medium text-gray-900 mb-3">Categoría</h3>
+                <h3 className="font-medium text-gray-900 mb-3">{t('catalog.category')}</h3>
                 <div className="space-y-2 max-h-48 overflow-y-auto">
                   <label className="flex items-center">
                     <input
@@ -230,7 +232,7 @@ export function Catalog() {
                       onChange={() => setSelectedCategory('all')}
                       className="mr-2"
                     />
-                    <span className="text-sm text-gray-700">Todas</span>
+                    <span className="text-sm text-gray-700">{t('catalog.allCategories')}</span>
                   </label>
                   {categories.map(cat => (
                     <label key={cat.id} className="flex items-center">
@@ -249,7 +251,7 @@ export function Catalog() {
 
               {/* Price Range */}
               <div>
-                <h3 className="font-medium text-gray-900 mb-3">Precio</h3>
+                <h3 className="font-medium text-gray-900 mb-3">{t('catalog.price')}</h3>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between text-sm text-gray-600">
                     <span>${priceRange[0]}</span>
@@ -291,12 +293,12 @@ export function Catalog() {
               </div>
             ) : (
               <div className="text-center py-12">
-                <p className="text-gray-500 mb-4">No se encontraron productos con los filtros seleccionados</p>
+                <p className="text-gray-500 mb-4">{t('catalog.noResults')}</p>
                 <button
                   onClick={clearFilters}
                   className="text-blue-600 hover:text-blue-700"
                 >
-                  Limpiar filtros
+                  {t('catalog.clear')}
                 </button>
               </div>
             )}

@@ -31,14 +31,12 @@ class TimeStampedModel(models.Model):
 
     # auto_now_add=True: se llena AUTOMÁTICAMENTE cuando se CREA el registro
     created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Fecha de creación'
+        auto_now_add=True, verbose_name="Fecha de creación"
     )
 
     # auto_now=True: se actualiza AUTOMÁTICAMENTE cada vez que se GUARDA
     updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name='Última actualización'
+        auto_now=True, verbose_name="Última actualización"
     )
 
     class Meta:
@@ -47,4 +45,4 @@ class TimeStampedModel(models.Model):
         abstract = True
 
         # Ordenar por fecha de creación (más reciente primero)
-        ordering = ['-created_at']
+        ordering = ["-created_at"]

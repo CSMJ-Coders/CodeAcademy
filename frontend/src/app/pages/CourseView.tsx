@@ -16,7 +16,10 @@ export function CourseView() {
 
   useEffect(() => {
     async function loadCourse() {
-      if (!id) return;
+      if (!id) {
+        setLoading(false);
+        return;
+      }
       try {
         const product = await fetchProductById(id);
         if (product && product.type === 'course') {
@@ -31,25 +34,9 @@ export function CourseView() {
     loadCourse();
   }, [id]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen pt-16 bg-gray-900 flex items-center justify-center">
-        <p className="text-gray-400">Cargando curso...</p>
-      </div>
-    );
-  }
-
-  if (!course) {
-    return <Navigate to="/dashboard/courses" />;
-  }
-
-  // Check if user has access
-  if (!purchasedProducts.includes(course.id)) {
-    return <Navigate to="/access-denied" />;
-  }
 
   useEffect(() => {
-    if (!course?.id) return;
+    if (!course?.id || loading) return;
     fetchCourseProgress(course.id)
       .then((progress) => {
         setCompletedChapters(progress.completedChapters);
@@ -66,10 +53,10 @@ export function CourseView() {
         setCompletedChapters([]);
         setProgressPercentage(0);
       });
-  }, [course?.id]);
+  }, [course?.id, loading]);
 
   const handleChapterComplete = async () => {
-    if (course.chapters && course.chapters[currentChapter]) {
+    if (course?.chapters && course.chapters[currentChapter]) {
       try {
         const result = await completeCourseChapter(course.id, course.chapters[currentChapter].id);
         setCompletedChapters(result.completedChapters);
@@ -81,13 +68,14 @@ export function CourseView() {
   };
 
   const handleNextChapter = async () => {
-    if (course.chapters && currentChapter < course.chapters.length - 1) {
+    if (course?.chapters && currentChapter < course.chapters.length - 1) {
       await handleChapterComplete();
       setCurrentChapter(currentChapter + 1);
     }
   };
 
   const handleDownloadCertificate = async () => {
+    if (!course) return;
     try {
       await downloadCourseCertificate(course.id);
     } catch (error) {
@@ -95,7 +83,26 @@ export function CourseView() {
     }
   };
 
-  const totalChapters = course.chapters?.length || 0;
+  if (loading) {
+    return (
+      <div className="min-h-screen pt-16 bg-gray-900 flex items-center justify-center">
+        <p className="text-gray-400">Cargando curso...</p>
+      </div>
+    );
+  }
+
+  if (!course) {
+    return <Navigate to="/dashboard/courses" />;
+  }
+
+  const chapters = course.chapters ?? [];
+  const totalChapters = chapters.length;
+
+  // Check if user has access
+  if (!purchasedProducts.includes(course.id)) {
+    return <Navigate to="/access-denied" />;
+  }
+
 
   return (
     <div className="min-h-screen pt-16 bg-gray-900">
@@ -131,10 +138,10 @@ export function CourseView() {
               <div className="text-center">
                 <Play className="w-16 h-16 text-white mx-auto mb-4" />
                 <p className="text-white text-lg mb-2">
-                  {course.chapters?.[currentChapter]?.title}
+                  {chapters[currentChapter]?.title ?? 'Capitulo sin titulo'}
                 </p>
                 <p className="text-gray-400 text-sm">
-                  Duración: {course.chapters?.[currentChapter]?.duration}
+                  Duracion: {chapters[currentChapter]?.duration ?? '-'}
                 </p>
               </div>
             </div>
@@ -155,7 +162,7 @@ export function CourseView() {
                 <CheckCircle2 className="w-4 h-4" />
                 <span>Marcar como Completado</span>
               </button>
-              {course.chapters && currentChapter < course.chapters.length - 1 && (
+              {chapters.length > 0 && currentChapter < chapters.length - 1 && (
                 <button
                   onClick={handleNextChapter}
                   className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -184,7 +191,7 @@ export function CourseView() {
             </p>
           </div>
           <div className="overflow-y-auto max-h-[calc(100vh-200px)]">
-            {course.chapters?.map((chapter, index) => {
+            {chapters.map((chapter, index) => {
               const isCompleted = completedChapters.includes(chapter.id);
               const isCurrent = index === currentChapter;
               return (

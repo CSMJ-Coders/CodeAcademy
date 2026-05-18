@@ -1,4 +1,5 @@
 import { useParams, useNavigate, Link } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { useEffect, useState } from 'react';
 import { fetchProductById, fetchProductPreviewById } from '../services/api';
 import { useCart } from '../contexts/CartContext';
@@ -8,6 +9,7 @@ import type { Product } from '../types';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 
 export function ProductDetail() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const { addToCart } = useCart();
@@ -54,9 +56,9 @@ export function ProductDetail() {
     return (
       <div className="min-h-screen pt-20 flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Producto no encontrado</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">{t('product.notFound')}</h1>
           <Link to="/catalog" className="text-blue-600 hover:text-blue-700">
-            Volver al catálogo
+            {t('product.backToCatalog')}
           </Link>
         </div>
       </div>
@@ -83,7 +85,7 @@ export function ProductDetail() {
         {showSuccess && (
           <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center space-x-2 text-green-700">
             <CheckCircle2 className="w-5 h-5" />
-            <span>Producto agregado al carrito</span>
+            <span>{t('product.addedToCart')}</span>
           </div>
         )}
 
@@ -100,12 +102,12 @@ export function ProductDetail() {
             </div>
             {product.isNew && (
               <span className="inline-block px-3 py-1 bg-green-500 text-white text-sm font-medium rounded mr-2">
-                Nuevo
+                {t('words.new')}
               </span>
             )}
             {product.originalPrice && (
               <span className="inline-block px-3 py-1 bg-red-500 text-white text-sm font-medium rounded">
-                En Oferta
+                {t('words.offer')}
               </span>
             )}
           </div>
@@ -117,12 +119,12 @@ export function ProductDetail() {
               {product.type === 'course' ? (
                 <>
                   <GraduationCap className="w-5 h-5 text-blue-600" />
-                  <span className="text-blue-600 font-medium">Curso Online</span>
+                  <span className="text-blue-600 font-medium">{t('product.courseType')}</span>
                 </>
               ) : (
                 <>
                   <BookOpen className="w-5 h-5 text-blue-600" />
-                  <span className="text-blue-600 font-medium">Libro Digital</span>
+                  <span className="text-blue-600 font-medium">{t('product.bookType')}</span>
                 </>
               )}
             </div>
@@ -135,22 +137,22 @@ export function ProductDetail() {
               <div className="flex items-center space-x-1">
                 <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
                 <span className="font-medium">{product.rating}</span>
-                <span>(150 valoraciones)</span>
+                <span>({product.rating > 1 ? '150 ' + t('product.ratings') : '150 ' + t('product.ratings')})</span>
               </div>
               <span>•</span>
               <span className="capitalize">
-                {product.level === 'beginner' ? 'Nivel Básico' : product.level === 'intermediate' ? 'Nivel Intermedio' : 'Nivel Avanzado'}
+                {product.level === 'beginner' ? t('product.levelBasic') : product.level === 'intermediate' ? t('product.levelIntermediate') : t('product.levelAdvanced')}
               </span>
               <span>•</span>
               <div className="flex items-center space-x-1">
                 <Globe className="w-4 h-4" />
-                <span>{product.language === 'spanish' ? 'Español' : 'Inglés'}</span>
+                <span>{product.language === 'spanish' ? 'Español' : 'English'}</span>
               </div>
             </div>
 
             {/* Author */}
             <p className="text-gray-700 mb-6">
-              <span className="font-medium">Por:</span> {product.author}
+              <span className="font-medium">{t('product.by')}</span> {product.author}
             </p>
 
             {/* Additional Info */}
@@ -164,7 +166,7 @@ export function ProductDetail() {
               {product.type === 'book' && product.pages && (
                 <div className="flex items-center space-x-2 px-3 py-2 bg-gray-50 rounded-lg">
                   <FileText className="w-4 h-4 text-gray-600" />
-                  <span className="text-gray-700">{product.pages} páginas</span>
+                  <span className="text-gray-700">{product.pages} {t('product.pages')}</span>
                 </div>
               )}
               <div className="flex items-center space-x-2 px-3 py-2 bg-gray-50 rounded-lg">
@@ -186,7 +188,7 @@ export function ProductDetail() {
               </div>
               {product.originalPrice && (
                 <p className="text-sm text-green-600 mt-2">
-                  Ahorra ${(product.originalPrice - product.price).toFixed(2)} ({Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% de descuento)
+                  {t('product.save')} ${(product.originalPrice - product.price).toFixed(2)} ({Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}{t('product.discountPercentage')})
                 </p>
               )}
             </div>
@@ -196,13 +198,13 @@ export function ProductDetail() {
               <div className="space-y-3">
                 <div className="p-4 bg-green-50 border border-green-200 rounded-lg flex items-center space-x-2 text-green-700">
                   <CheckCircle2 className="w-5 h-5" />
-                  <span>Ya has adquirido este producto</span>
+                  <span>{t('product.purchased')}</span>
                 </div>
                 <Link
                   to={product.type === 'course' ? '/dashboard/courses' : '/dashboard/books'}
                   className="block w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-center"
                 >
-                  {product.type === 'course' ? 'Ir a Mis Cursos' : 'Ir a Mis Libros'}
+                  {product.type === 'course' ? t('product.goToCourses') : t('product.goToBooks')}
                 </Link>
               </div>
             ) : (
@@ -211,14 +213,14 @@ export function ProductDetail() {
                   onClick={handleBuyNow}
                   className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
                 >
-                  Comprar Ahora
+                  {t('product.buyNow')}
                 </button>
                 <button
                   onClick={handleAddToCart}
                   className="w-full px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center justify-center space-x-2"
                 >
                   <ShoppingCart className="w-5 h-5" />
-                  <span>Agregar al Carrito</span>
+                  <span>{t('product.addToCart')}</span>
                 </button>
               </div>
             )}
@@ -227,17 +229,17 @@ export function ProductDetail() {
 
         {/* Description Section */}
         <div className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Descripción</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">{t('product.description')}</h2>
           <p className="text-gray-700 leading-relaxed">{product.description}</p>
         </div>
 
         {/* Content Section */}
         {product.type === 'course' && (isPurchased ? product.chapters : preview?.chapters) && (
           <div className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Contenido del Curso</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">{t('product.content')}</h2>
             {!isPurchased && (
               <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
-                Estás viendo solo capítulos de muestra. Compra el curso para desbloquear todo el contenido.
+                {t('product.previewOnly')}
               </p>
             )}
             <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
@@ -261,10 +263,10 @@ export function ProductDetail() {
 
         {product.type === 'book' && (isPurchased ? product.tableOfContents : preview?.tableOfContents) && (
           <div className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Tabla de Contenidos</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">{t('product.tableOfContents')}</h2>
             {!isPurchased && (
               <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
-                Estás viendo solo el índice de muestra. Compra el libro para desbloquear el contenido completo.
+                {t('product.sampleIndex')}
               </p>
             )}
             <div className="bg-white border border-gray-200 rounded-lg">

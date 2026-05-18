@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { GraduationCap, AlertCircle } from 'lucide-react';
 
 export function Login() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -27,7 +29,7 @@ export function Login() {
       if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError('Ocurrió un error. Por favor, intenta nuevamente.');
+        setError(t('login.error'));
       }
     } finally {
       setLoading(false);
@@ -45,8 +47,8 @@ export function Login() {
             </div>
             <span className="font-semibold text-2xl text-gray-900">Code Academy</span>
           </Link>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Bienvenido de nuevo</h1>
-          <p className="text-gray-600">Inicia sesión para continuar aprendiendo</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">{t('login.welcome')}</h1>
+          <p className="text-gray-600">{t('login.subtitle')}</p>
         </div>
 
         {/* Form */}
@@ -61,7 +63,7 @@ export function Login() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                Correo Electrónico
+                {t('login.email')}
               </label>
               <input
                 id="email"
@@ -76,7 +78,7 @@ export function Login() {
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                Contraseña
+                {t('login.password')}
               </label>
               <input
                 id="password"
@@ -92,10 +94,10 @@ export function Login() {
             <div className="flex items-center justify-between">
               <label className="flex items-center">
                 <input type="checkbox" className="mr-2" />
-                <span className="text-sm text-gray-600">Recordarme</span>
+                <span className="text-sm text-gray-600">{t('login.rememberMe')}</span>
               </label>
               <a href="#" className="text-sm text-blue-600 hover:text-blue-700">
-                ¿Olvidaste tu contraseña?
+                {t('login.forgotPassword')}
               </a>
             </div>
 
@@ -104,15 +106,15 @@ export function Login() {
               disabled={loading}
               className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+              {loading ? t('login.signing') : t('login.submit')}
             </button>
           </form>
 
           <div className="mt-6 text-center">
             <p className="text-gray-600">
-              ¿No tienes una cuenta?{' '}
+              {t('login.noAccount')}{' '}
               <Link to="/register" className="text-blue-600 hover:text-blue-700 font-medium">
-                Regístrate aquí
+                {t('login.register')}
               </Link>
             </p>
           </div>

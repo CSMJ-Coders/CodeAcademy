@@ -78,6 +78,8 @@ class Product(models.Model):
 
     # ── Campos comunes (cursos y libros) ───────────────────────────────────
     title = models.CharField(max_length=255)
+    title_es = models.CharField(max_length=255, blank=True, default="")
+    title_en = models.CharField(max_length=255, blank=True, default="")
     # choices= hace que Django valide que sólo entren valores de TYPE_CHOICES
     type = models.CharField(max_length=10, choices=TYPE_CHOICES)
     # ForeignKey = relación muchos-a-uno (muchos productos → una categoría)
@@ -90,6 +92,8 @@ class Product(models.Model):
     )
     author = models.CharField(max_length=255)
     description = models.TextField()  # TextField = texto largo sin límite
+    description_es = models.TextField(blank=True, default="")
+    description_en = models.TextField(blank=True, default="")
     # DecimalField para dinero: max_digits=total dígitos, decimal_places=decimales
     price = models.DecimalField(
         max_digits=10, decimal_places=2, validators=[MinValueValidator(0)]

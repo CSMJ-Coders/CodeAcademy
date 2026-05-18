@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { GraduationCap, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export function Register() {
+  const { t } = useTranslation();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -19,12 +21,12 @@ export function Register() {
 
     // Validation
     if (password.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres');
+      setError(t('register.passwordMinLength'));
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('Las contraseñas no coinciden');
+      setError(t('register.passwordMismatch'));
       return;
     }
 
@@ -39,7 +41,7 @@ export function Register() {
       if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError('Ocurrió un error. Por favor, intenta nuevamente.');
+        setError(t('register.error'));
       }
     } finally {
       setLoading(false);
@@ -57,8 +59,8 @@ export function Register() {
             </div>
             <span className="font-semibold text-2xl text-gray-900">Code Academy</span>
           </Link>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Crea tu cuenta</h1>
-          <p className="text-gray-600">Comienza tu viaje de aprendizaje hoy</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">{t('register.title')}</h1>
+          <p className="text-gray-600">{t('register.subtitle')}</p>
         </div>
 
         {/* Form */}
@@ -73,7 +75,7 @@ export function Register() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                Nombre Completo
+                {t('register.fullName')}
               </label>
               <input
                 id="name"
@@ -88,7 +90,7 @@ export function Register() {
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                Correo Electrónico
+                {t('register.email')}
               </label>
               <input
                 id="email"
@@ -103,7 +105,7 @@ export function Register() {
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                Contraseña
+                {t('register.password')}
               </label>
               <input
                 id="password"
@@ -119,7 +121,7 @@ export function Register() {
 
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                Confirmar Contraseña
+                {t('register.confirmPassword')}
               </label>
               <input
                 id="confirmPassword"
@@ -133,7 +135,7 @@ export function Register() {
               {confirmPassword && password === confirmPassword && (
                 <div className="flex items-center space-x-1 mt-1 text-green-600">
                   <CheckCircle2 className="w-3 h-3" />
-                  <span className="text-xs">Las contraseñas coinciden</span>
+                  <span className="text-xs">{t('register.passwordsMatch')}</span>
                 </div>
               )}
             </div>
@@ -157,15 +159,15 @@ export function Register() {
               disabled={loading}
               className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Creando cuenta...' : 'Crear Cuenta'}
+              {loading ? t('register.signing') : t('register.submit')}
             </button>
           </form>
 
           <div className="mt-6 text-center">
             <p className="text-gray-600">
-              ¿Ya tienes una cuenta?{' '}
+              {t('register.haveAccount')}{' '}
               <Link to="/login" className="text-blue-600 hover:text-blue-700 font-medium">
-                Inicia sesión
+                {t('register.login')}
               </Link>
             </p>
           </div>

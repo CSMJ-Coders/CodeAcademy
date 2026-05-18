@@ -1,4 +1,5 @@
 import { Link } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { GraduationCap, Clock, Play } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -7,6 +8,7 @@ import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import type { Product } from '../types';
 
 export function MyCourses() {
+  const { t } = useTranslation();
   const { purchasedProducts } = useAuth();
   const [myCourses, setMyCourses] = useState<Product[]>([]);
   const [progressMap, setProgressMap] = useState<Record<string, number>>({});
@@ -50,7 +52,7 @@ export function MyCourses() {
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-12">
         <div className="text-center">
-          <p className="text-gray-600">Cargando cursos...</p>
+          <p className="text-gray-600">{t('myCourses.loading')}</p>
         </div>
       </div>
     );
@@ -61,13 +63,13 @@ export function MyCourses() {
       <div className="bg-white rounded-lg border border-gray-200 p-12">
         <div className="text-center">
           <GraduationCap className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-gray-900 mb-2">No tienes cursos aún</h2>
-          <p className="text-gray-600 mb-6">Explora nuestro catálogo y comienza a aprender</p>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">{t('messages.noCourses')}</h2>
+          <p className="text-gray-600 mb-6">{t('messages.exploreCatalog')}</p>
           <Link
             to="/catalog?type=course"
             className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
-            Explorar Cursos
+            {t('navbar.courses')}
           </Link>
         </div>
       </div>
@@ -77,8 +79,8 @@ export function MyCourses() {
   return (
     <div className="bg-white rounded-lg border border-gray-200">
       <div className="p-6 border-b border-gray-200">
-        <h1 className="text-2xl font-bold text-gray-900">Mis Cursos</h1>
-        <p className="text-gray-600 mt-1">{myCourses.length} {myCourses.length === 1 ? 'curso' : 'cursos'}</p>
+        <h1 className="text-2xl font-bold text-gray-900">{t('myCourses.title')}</h1>
+        <p className="text-gray-600 mt-1">{myCourses.length} {myCourses.length === 1 ? t('myCourses.course') : t('myCourses.courses')}</p>
       </div>
 
       <div className="p-6">
@@ -99,7 +101,7 @@ export function MyCourses() {
                       className="px-6 py-3 bg-white text-gray-900 rounded-lg hover:bg-gray-100 flex items-center space-x-2"
                     >
                       <Play className="w-4 h-4" />
-                      <span>Continuar</span>
+                      <span>{t('buttons.continueCourse')}</span>
                     </Link>
                   </div>
                 </div>
@@ -112,7 +114,7 @@ export function MyCourses() {
                   {/* Progress Bar */}
                   <div className="mb-3">
                     <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
-                      <span>Progreso</span>
+                      <span>{t('product.progress')}</span>
                       <span>{progress}%</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
@@ -129,7 +131,7 @@ export function MyCourses() {
                       <span>{course.duration}</span>
                     </div>
                     <span className="capitalize">
-                      {course.level === 'beginner' ? 'Básico' : course.level === 'intermediate' ? 'Intermedio' : 'Avanzado'}
+                      {t(`words.${course.level === 'beginner' ? 'basic' : course.level === 'intermediate' ? 'intermediate' : 'advanced'}`)}
                     </span>
                   </div>
 
@@ -137,7 +139,7 @@ export function MyCourses() {
                     to={`/course/${course.id}`}
                     className="mt-4 block w-full px-4 py-2 bg-blue-600 text-white text-center rounded-lg hover:bg-blue-700"
                   >
-                    {progress > 0 ? 'Continuar' : 'Comenzar'}
+                    {progress > 0 ? t('buttons.continueCourse') : t('buttons.startCourse')}
                   </Link>
                 </div>
               </div>

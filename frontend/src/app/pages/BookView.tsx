@@ -1,4 +1,5 @@
 import { useParams, Navigate, Link } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { ArrowLeft, Download, BookOpen } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -6,6 +7,7 @@ import { downloadBookPdf, fetchBookDownloadStatus, fetchProductById } from '../s
 import type { Product } from '../types';
 
 export function BookView() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const { purchasedProducts } = useAuth();
   const [book, setBook] = useState<Product | null>(null);
@@ -73,11 +75,11 @@ export function BookView() {
               className="flex items-center space-x-2 text-gray-600 hover:text-gray-900"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span>Volver a Mis Libros</span>
+              <span>{t('bookView.backToBooks')}</span>
             </Link>
             <div className="flex items-center space-x-4">
               <div className="text-sm text-gray-600">
-                Descargas restantes: {downloads.downloadsRemaining} / {downloads.maxDownloads}
+                {t('bookView.downloadsRemaining')}: {downloads.downloadsRemaining} / {downloads.maxDownloads}
               </div>
               <button
                 onClick={handleDownload}
@@ -85,7 +87,7 @@ export function BookView() {
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Download className="w-4 h-4" />
-                <span>Descargar PDF</span>
+                <span>{t('buttons.download')}</span>
               </button>
             </div>
           </div>
@@ -107,26 +109,26 @@ export function BookView() {
               
               <div className="space-y-2 text-sm text-gray-600 mb-4">
                 <div className="flex justify-between">
-                  <span>Páginas:</span>
+                  <span>{t('bookView.pages')}:</span>
                   <span className="font-medium text-gray-900">{book.pages}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Nivel:</span>
+                  <span>{t('bookView.level')}:</span>
                   <span className="font-medium text-gray-900 capitalize">
-                    {book.level === 'beginner' ? 'Básico' : book.level === 'intermediate' ? 'Intermedio' : 'Avanzado'}
+                    {t(`words.${book.level === 'beginner' ? 'basic' : book.level === 'intermediate' ? 'intermediate' : 'advanced'}`)}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Idioma:</span>
+                  <span>{t('bookView.language')}:</span>
                   <span className="font-medium text-gray-900">
-                    {book.language === 'spanish' ? 'Español' : 'Inglés'}
+                    {book.language === 'spanish' ? 'Español' : 'English'}
                   </span>
                 </div>
               </div>
 
               {book.tableOfContents && (
                 <div className="pt-4 border-t border-gray-200">
-                  <h3 className="font-semibold text-gray-900 mb-3">Tabla de Contenidos</h3>
+                  <h3 className="font-semibold text-gray-900 mb-3">{t('product.tableOfContents')}</h3>
                   <ul className="space-y-2 text-sm text-gray-600">
                     {book.tableOfContents.slice(0, 5).map((item, index) => (
                       <li key={index} className="flex items-start space-x-2">
@@ -136,7 +138,7 @@ export function BookView() {
                     ))}
                     {book.tableOfContents.length > 5 && (
                       <li className="text-gray-400 text-xs">
-                        +{book.tableOfContents.length - 5} capítulos más...
+                        {t('bookView.moreChapters', { count: book.tableOfContents.length - 5 })}
                       </li>
                     )}
                   </ul>
