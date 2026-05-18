@@ -19,5 +19,5 @@ RUN chmod +x /code/entrypoint.sh
 
 WORKDIR /code/app
 
-# Ejecutar el script de entrada en lugar del comando directo
-CMD ["/code/entrypoint.sh"]
+# Ejecutar mediante sh para evitar problemas de permisos en volúmenes montados (Windows)
+CMD ["sh", "/code/entrypoint.sh"]
