@@ -153,10 +153,3 @@ npm run dev
 - `app/notifications/` para abstracciones de entrega
 - `frontend/src/app/services/api.ts` para llamadas API del frontend
 
-## Qué ya está hecho
-
-- backend y frontend están conectados a través de Docker
-- lógica de orden y acceso está en servicios, no en vistas
-- notificaciones se abstraen con una interfaz
-- pruebas pasan localmente con el fallback configurado
-- diagramas se han añadido para documentación de clase y arquitectura
