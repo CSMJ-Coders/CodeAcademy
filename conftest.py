@@ -8,8 +8,8 @@ import os
 import django
 from django.conf import settings
 
-# Configure Django settings
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings_development')
+# Configure Django settings for tests
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings_test")
 django.setup()
 
 import pytest
@@ -30,11 +30,11 @@ def api_client():
 def authenticated_user(db):
     """Creates and returns an authenticated test user."""
     user = User.objects.create_user(
-        username='testuser',
-        email='test@example.com',
-        password='TestPass123!',
-        first_name='Test',
-        last_name='User',
+        username="testuser",
+        email="test@example.com",
+        password="TestPass123!",
+        first_name="Test",
+        last_name="User",
     )
     return user
 
@@ -50,25 +50,25 @@ def authenticated_client(db, authenticated_user):
 @pytest.fixture
 def test_category(db):
     """Creates a test product category."""
-    return Category.objects.create(name='Test Category', icon='code-2')
+    return Category.objects.create(name="Test Category", icon="code-2")
 
 
 @pytest.fixture
 def test_course(db, test_category):
     """Creates a test course product."""
     return Product.objects.create(
-        title='Test Course',
+        title="Test Course",
         type=Product.TYPE_COURSE,
         category=test_category,
-        author='Test Author',
-        description='Test course description',
-        price=Decimal('99.99'),
-        original_price=Decimal('199.99'),
+        author="Test Author",
+        description="Test course description",
+        price=Decimal("99.99"),
+        original_price=Decimal("199.99"),
         level=Product.LEVEL_BEGINNER,
         language=Product.LANGUAGE_SPANISH,
-        image='',
-        rating=Decimal('4.5'),
-        duration='40 hours',
+        image="",
+        rating=Decimal("4.5"),
+        duration="40 hours",
         is_featured=True,
         is_active=True,
     )
@@ -78,16 +78,16 @@ def test_course(db, test_category):
 def test_book(db, test_category):
     """Creates a test book product."""
     return Product.objects.create(
-        title='Test Book',
+        title="Test Book",
         type=Product.TYPE_BOOK,
         category=test_category,
-        author='Test Author',
-        description='Test book description',
-        price=Decimal('29.99'),
+        author="Test Author",
+        description="Test book description",
+        price=Decimal("29.99"),
         level=Product.LEVEL_INTERMEDIATE,
         language=Product.LANGUAGE_SPANISH,
-        image='',
-        rating=Decimal('4.8'),
+        image="",
+        rating=Decimal("4.8"),
         pages=350,
         is_featured=True,
         is_active=True,
@@ -100,16 +100,16 @@ def multiple_products(db, test_category):
     products = []
     for i in range(5):
         product = Product.objects.create(
-            title=f'Product {i}',
+            title=f"Product {i}",
             type=Product.TYPE_COURSE if i % 2 == 0 else Product.TYPE_BOOK,
             category=test_category,
-            author='Author',
-            description='Description',
-            price=Decimal('19.99') * (i + 1),
+            author="Author",
+            description="Description",
+            price=Decimal("19.99") * (i + 1),
             level=Product.LEVEL_BEGINNER,
             language=Product.LANGUAGE_SPANISH,
-            image='',
-            rating=Decimal('4.0'),
+            image="",
+            rating=Decimal("4.0"),
             is_active=True,
         )
         products.append(product)

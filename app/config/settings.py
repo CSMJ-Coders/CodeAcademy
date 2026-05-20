@@ -135,22 +135,24 @@ WSGI_APPLICATION = "config.wsgi.application"
 # ============================================
 # Base de Datos
 # ============================================
-# Si hay una DATABASE_URL definida (común en CI/CD o Heroku), la usamos prioritariamente.
-if os.environ.get("DATABASE_URL"):
+# Si estamos en modo test o forzamos SQLite localmente, evitamos tocar la base
+# remota y usamos una base local efímera para que pytest sea reproducible.
+if USE_SQLITE_FOR_LOCAL or RUNNING_TESTS:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "test_db.sqlite3",
+        }
+    }
+# Si hay una DATABASE_URL definida (común en CI/CD o Heroku), la usamos
+# para desarrollo normal cuando no estamos ejecutando tests.
+elif os.environ.get("DATABASE_URL"):
     DATABASES = {
         "default": dj_database_url.config(
             default=os.environ.get("DATABASE_URL"),
             conn_max_age=600,
             conn_health_checks=True,
         )
-    }
-# Si estamos en modo test o forzamos SQLite localmente.
-elif USE_SQLITE_FOR_LOCAL or RUNNING_TESTS:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
-        }
     }
 # Configuración estándar de PostgreSQL (Docker / Desarrollo local).
 else:
