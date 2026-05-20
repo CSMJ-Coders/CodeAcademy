@@ -130,17 +130,3 @@ El proyecto incluye pruebas automatizadas para:
 - filtrado de catálogo y descargas protegidas
 
 Para hacer posible las pruebas locales fuera de Docker, el backend usa SQLite como fallback durante la ejecución de pruebas cuando PostgreSQL no está disponible.
-
-## Diagramas relacionados
-
-- [Diagrama de clases](class_diagram.mmd)
-- [Diagrama de arquitectura](architecture_diagram.mmd)
-
-## Limitaciones actuales
-
-Estas son útiles de notar para el handover:
-
-- despliegue en producción no es parte de la configuración local del desarrollador
-- alojamiento en la nube es aún una preocupación de entregable separada
-- rating se almacena actualmente como campo de modelo, no calculado de un sistema de reseñas
-- el proyecto está listo para desarrollo local y evaluación, pero el endurecimiento de producción aún está pendiente

@@ -154,7 +154,7 @@ git --version
 ## 2) Clonar y abrir proyecto
 
 ```bash
-git clone <URL_DEL_REPO>
+git clone https://github.com/CSMJ-Coders/CodeAcademy
 cd CodeAcademy
 ```
 
