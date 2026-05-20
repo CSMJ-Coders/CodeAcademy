@@ -24,8 +24,10 @@ El proyecto ya tiene implementados los flujos principales:
 - Pagos: Stripe (modo test)
 - Infra local: Docker Compose
 
-Si quieres la versión más completa de arquitectura, operaciones y handover, revisa:
+Documentación recomendada:
 
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- [docs/ONBOARDING.md](docs/ONBOARDING.md)
 - [docs/HANDOVER.md](docs/HANDOVER.md)
 
 ## Inicio rápido
