@@ -1,380 +1,77 @@
 # Code Academy
 
-Plataforma eCommerce de cursos y libros de programación con Django, React y Stripe.
+Plataforma de comercio electrónico para vender y consumir cursos en video y libros digitales de programación. API en Django REST Framework + PostgreSQL, frontend en React + TypeScript, pagos con Stripe y despliegue en Google Cloud Run.
 
-## Estado del proyecto
+**Demo:** [Frontend](https://code-academy-frontend-338552219192.us-east1.run.app) · [API (catálogo en JSON)](https://code-academy-338552219192.us-east1.run.app/api/products/)
+<!-- Verificar que ambos enlaces siguen activos antes de publicar. Si el servicio ya no está, cambiar esta línea por un video corto o un GIF del flujo de compra. -->
 
-El proyecto ya tiene implementados los flujos principales:
+![Catálogo](https://github.com/user-attachments/assets/9be56cc8-52fe-42c4-be83-ae073ea28962)
 
-- autenticación con JWT
-- catálogo de productos con filtros
-- carrito persistente en backend
-- órdenes y pagos con Stripe en modo test
-- acceso protegido a libros y cursos
-- progreso de cursos y certificados
-- panel admin mejorado
-- seed data reproducible
-- Docker full stack para desarrollo
+## Funcionalidades
+
+- Registro e inicio de sesión con **JWT** (access + refresh, logout con blacklist).
+- Catálogo de cursos y eBooks con filtros y paginación.
+- Carrito persistente en el backend y órdenes de compra.
+- Pagos con **Stripe** en modo test: PaymentIntents + webhook firmado que confirma la orden.
+- Descargas protegidas: la API verifica que el usuario pagó antes de servir el archivo y limita el número de descargas por compra.
+- Contenido de vista previa gratuita (`is_preview`) para usuarios no registrados.
+- Seguimiento de progreso por curso y **certificado PDF** automático al llegar al 100 %.
+- Interfaz en español e inglés (i18n).
+- Comando de datos de prueba idempotente: `python manage.py seed_catalog --clear`.
 
 ## Arquitectura
 
-- Backend: Django 4.2 + DRF + PostgreSQL
-- Frontend: React + TypeScript + Vite
-- Auth: JWT con `djangorestframework-simplejwt`
-- Pagos: Stripe (modo test)
-- Infra local: Docker Compose
+| Capa | Tecnología |
+|---|---|
+| Backend | Django 4.2, Django REST Framework, SimpleJWT, django-filter |
+| Base de datos | PostgreSQL (Neon en producción) |
+| Frontend | React, TypeScript, Vite |
+| Pagos | Stripe |
+| Infraestructura | Docker Compose (desarrollo), Docker + Nginx + Google Cloud Run (producción) |
 
-Documentación recomendada:
+La lógica de negocio vive en clases `Service` y las consultas complejas en `repositories.py`. Más detalle en [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
-- [docs/ONBOARDING.md](docs/ONBOARDING.md)
-- [docs/HANDOVER.md](docs/HANDOVER.md)
+## Calidad y CI/CD
+
+- **36 tests** de backend con pytest (auth, catálogo, carrito, órdenes e integración de pagos). Cobertura mínima exigida: 70 %.
+- **6 pruebas E2E** con Playwright sobre el stack completo levantado con Docker Compose.
+- Pipeline de **GitHub Actions** en cada push y PR: tests con PostgreSQL + cobertura, lint (Black, isort, flake8), build del frontend, E2E, escaneo de seguridad con Bandit y build de la imagen Docker.
+
+```bash
+docker compose exec web pytest --cov=. --cov-report=term
+```
 
 ## Inicio rápido
 
-### 1) Requisitos
-
-- Docker Desktop
-- Node.js 18+ si vas a correr frontend fuera de Docker
-- Git
-- Stripe CLI opcional para webhooks locales
-
-### 2) Variables de entorno
-
-```bash
-cp .env.example .env
-cp frontend/.env.example frontend/.env
-```
-
-Completa al menos:
-
-- `DJANGO_SECRET_KEY`
-- `STRIPE_SECRET_KEY`
-- `STRIPE_PUBLISHABLE_KEY`
-- `STRIPE_WEBHOOK_SECRET` si usas `stripe listen`
-
-### 3) Levantar todo
-
-```bash
-docker compose up -d --build
-docker compose exec web python manage.py migrate
-```
-
-### 4) URLs
-
-- Frontend: http://localhost:5173
-- API: http://localhost:8000/api/test/
-- Admin: http://localhost:8000/admin/
-
-## Seed data
-
-Si necesitas cargar el catálogo demo desde cero:
-
-```bash
-docker compose exec web python manage.py seed_catalog --clear
-```
-
-Este comando es idempotente y está probado.
-
-## Flujo de prueba recomendado
-
-1. Registrarte o iniciar sesión.
-2. Explorar catálogo.
-3. Agregar productos al carrito.
-4. Ir al checkout y pagar con Stripe test.
-5. Revisar órdenes.
-6. Descargar un libro o avanzar un curso.
-
-Tarjeta de prueba de Stripe:
-
-- `4242 4242 4242 4242`
-- fecha futura
-- CVC cualquiera
-
-## Comandos útiles
-
-```bash
-docker compose ps
-docker compose logs -f web
-docker compose logs -f frontend
-docker compose exec web python manage.py test
-docker compose exec web python manage.py test products -v2
-docker compose exec web python manage.py test cart -v2
-```
-
-## Reinicio limpio
-
-```bash
-docker compose down
-docker compose up -d --build
-docker compose exec web python manage.py migrate
-```
-
-## Notas de entrega
-
-- El proyecto está en la rama `main`.
-- Los cambios se están versionando con commits semánticos.
-
-# Code Academy
-
-Plataforma eCommerce para cursos y libros de programación.
-
-## Stack
-
-- Backend: Django + DRF + PostgreSQL
-- Frontend: React + TypeScript + Vite
-- Auth: JWT
-- Pagos: Stripe (test mode)
-- Infra local: Docker Compose
-
----
-
-## 1) Requisitos previos
-
-Instalar:
-
-- Docker Desktop
-- Node.js 18+
-- npm 9+
-- Git
-- (Opcional) Stripe CLI para webhooks locales
-
-Verificar:
-
-```bash
-docker --version
-docker compose version
-node --version
-npm --version
-git --version
-```
-
----
-
-## 2) Clonar y abrir proyecto
+Requisitos: Docker Desktop y Git (Stripe CLI es opcional, para probar webhooks en local).
 
 ```bash
 git clone https://github.com/CSMJ-Coders/CodeAcademy
 cd CodeAcademy
-```
-
-Si trabajarás una rama específica:
-
-```bash
-git checkout <tu-rama>
-```
-
----
-
-## 3) Variables de entorno (backend)
-
-Crear `.env` desde plantilla:
-
-```bash
-cp .env.example .env
-```
-
-Editar `.env` y completar **obligatoriamente** Stripe:
-
-- `STRIPE_SECRET_KEY=sk_test_...`
-- `STRIPE_PUBLISHABLE_KEY=pk_test_...`
-- `STRIPE_WEBHOOK_SECRET=whsec_...` (si usarás webhook firmado)
-- `STRIPE_CURRENCY=usd`
-
-Las variables de DB/CORS ya tienen valores de desarrollo por defecto.
-
-> Nunca subir `.env` a Git.
-
----
-
-## 4) Variables de entorno (frontend)
-
-Crear archivo de frontend:
-
-```bash
+cp .env.example .env              # completar DJANGO_SECRET_KEY y las llaves test de Stripe
 cp frontend/.env.example frontend/.env
-```
-
-Validar que tenga:
-
-- `VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...`
-
-Debe coincidir con la llave pública test del backend.
-
----
-
-## 5) Levantar proyecto completo en Docker (recomendado)
-
-Desde raíz:
-
-```bash
 docker compose up -d --build
 docker compose exec web python manage.py migrate
+docker compose exec web python manage.py seed_catalog --clear
 ```
 
-Esto levanta:
+| Servicio | URL |
+|---|---|
+| Frontend | http://localhost:5173 |
+| API | http://localhost:8000/api/ |
+| Admin | http://localhost:8000/admin/ |
 
-- `db` (PostgreSQL)
-- `web` (Django API)
-- `frontend` (React + Vite)
+Tarjeta de prueba de Stripe: `4242 4242 4242 4242`, cualquier fecha futura y cualquier CVC.
 
-Opcional admin:
+Guía completa de instalación, webhooks y solución de problemas: [docs/ONBOARDING.md](docs/ONBOARDING.md).
 
-```bash
-docker compose exec web python manage.py createsuperuser
-```
+## Equipo
 
----
+Proyecto académico, Universidad EAFIT (2026-1).
 
-## 6) Frontend en Docker vs local
+- **Camilo Álvarez Villegas**: desarrollador principal (autenticación JWT, pagos con Stripe, descargas protegidas y certificados, infraestructura Docker, CI/CD y despliegue).
+- Matías Monsalve Ruiz
+- Samuel Calderón Duque
+- Juan José Díaz Rodríguez
 
-### Opción A (requisito full Docker)
-
-No necesitas correr `npm run dev` localmente. El frontend ya corre en el servicio `frontend`.
-
-### Opción B (solo desarrollo frontend local)
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Si usas esta opción, asegúrate de tener backend en Docker (`web` + `db`) levantado.
-
----
-
-## 7) URLs de verificación
-
-- Frontend: http://localhost:5173
-- API test: http://localhost:8000/api/test/
-- Django Admin: http://localhost:8000/admin/
-
----
-
-## 8) Configurar webhook de Stripe (recomendado para pruebas reales)
-
-En otra terminal:
-
-```bash
-stripe login
-stripe listen --forward-to localhost:8000/api/orders/webhook/stripe/
-```
-
-Copiar el `whsec_...` que muestra Stripe CLI y colocarlo en `.env` (`STRIPE_WEBHOOK_SECRET`).
-
-Luego reiniciar backend:
-
-```bash
-docker compose restart web
-```
-
----
-
-## 9) Flujo de prueba completo (compra + acceso)
-
-1. Registrar/login en frontend.
-2. Comprar producto en checkout con tarjeta test:
-   - `4242 4242 4242 4242`
-   - fecha futura, CVC cualquiera.
-3. Confirmar orden en “Mis Órdenes”.
-4. Verificar acceso a producto comprado.
-5. Libros: probar descarga protegida (máximo 3 descargas).
-6. Cursos: completar capítulos, llegar a 100% y descargar certificado PDF.
-
----
-
-## 10) Comandos útiles
-
-Levantar/parar:
-
-```bash
-docker compose up -d
-docker compose down
-```
-
-Logs:
-
-```bash
-docker compose logs -f web
-docker compose logs -f db
-```
-
-Django (contenedor):
-
-```bash
-docker compose exec web python manage.py makemigrations
-docker compose exec web python manage.py migrate
-docker compose exec web python manage.py test
-docker compose exec web python manage.py shell
-```
-
-Frontend:
-
-```bash
-docker compose logs -f frontend
-
-# Opcional (si corres frontend local)
-cd frontend
-npm run dev
-npm run build
-```
-
----
-
-## 11) Troubleshooting rápido
-
-### Error: `No module named 'reportlab'`
-
-```bash
-docker compose build --no-cache web
-docker compose up -d
-```
-
-### Error checkout 401 / sesión expirada
-
-- Cerrar sesión y volver a iniciar.
-- Verificar `code_academy_access_token` y `code_academy_refresh_token` en navegador.
-
-### Stripe no inicializa en frontend
-
-- Revisar `frontend/.env` (`VITE_STRIPE_PUBLISHABLE_KEY`).
-- Si frontend corre en Docker, reiniciar servicio:
-
-```bash
-docker compose restart frontend
-```
-
-- Si frontend corre local, reiniciar `npm run dev`.
-
-### Webhook no actualiza estado de pago
-
-- Confirmar `stripe listen` activo.
-- Confirmar `STRIPE_WEBHOOK_SECRET` correcto.
-- Revisar `docker compose logs -f web`.
-
----
-
-## 12) Notas para quien hace pull por primera vez
-
-Si haces pull y hubo cambios en `requirements.txt` o `dockerfile`, reconstruye:
-
-```bash
-docker compose down
-docker compose build --no-cache web
-docker compose up -d
-docker compose exec web python manage.py migrate
-```
-
-Si hubo cambios en frontend:
-
-```bash
-# Si frontend corre en Docker
-docker compose up -d --build frontend
-
-# Si frontend corre local
-cd frontend
-npm install
-npm run dev
-```
-
+Documentación del curso, diagramas y capturas: [Wiki](https://github.com/CSMJ-Coders/CodeAcademy/wiki).
